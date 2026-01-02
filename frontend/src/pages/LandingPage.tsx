@@ -1,294 +1,285 @@
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import Hero from '../components/Hero'
-import Features from '../components/Features'
-import Pricing from '../components/Pricing'
-import Testimonials from '../components/Testimonials'
-import FAQ from '../components/FAQ'
-import { useAuthStore } from '../store/authStore'
-import { Button } from '../components/ui/button'
-import { BarChart3, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import {
+    ArrowRight, Sparkles, Zap, Shield, TrendingUp,
+    BarChart3, Database, MessageSquare, ChevronDown
+} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { useEffect, useRef, useState } from 'react';
 
-const LandingPage = () => {
-    const { isAuthenticated } = useAuthStore()
-    const [isMenuOpen, setIsMenuOpen] = useState(false)
-    const { scrollY } = useScroll()
-    const headerBg = useTransform(scrollY, [0, 100], ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.9)'])
-    const headerBlur = useTransform(scrollY, [0, 100], ['blur(0px)', 'blur(8px)'])
+export default function LandingPage() {
+    const navigate = useNavigate();
+    const heroRef = useRef<HTMLDivElement>(null);
+    const [scrollY, setScrollY] = useState(0);
+
+    useEffect(() => {
+        const handleScroll = () => setScrollY(window.scrollY);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const features = [
+        {
+            icon: MessageSquare,
+            title: 'Natural Language Queries',
+            description: 'Ask questions in plain English and get instant insights from your data',
+            color: 'from-accent to-emerald-500'
+        },
+        {
+            icon: Sparkles,
+            title: 'AI-Powered Analysis',
+            description: 'Advanced AI agents understand context and deliver accurate results',
+            color: 'from-emerald-500 to-teal-500'
+        },
+        {
+            icon: BarChart3,
+            title: 'Interactive Visualizations',
+            description: 'Beautiful charts and graphs auto-generated from your queries',
+            color: 'from-teal-500 to-cyan-500'
+        },
+        {
+            icon: Database,
+            title: 'Multi-Source Support',
+            description: 'Connect to databases, CSV files, and cloud storage seamlessly',
+            color: 'from-cyan-500 to-accent'
+        },
+        {
+            icon: TrendingUp,
+            title: 'Predictive Insights',
+            description: 'Forecast trends and get recommendations based on your data',
+            color: 'from-accent to-emerald-600'
+        },
+        {
+            icon: Shield,
+            title: 'Enterprise Security',
+            description: 'Your data stays secure with encryption and access controls',
+            color: 'from-emerald-600 to-teal-600'
+        }
+    ];
 
     return (
-        <div className="min-h-screen bg-card text-foreground selection:bg-purple-100 scroll-smooth font-sans">
-            {/* Header */}
-            <motion.header
-                style={{ backgroundColor: headerBg, backdropFilter: headerBlur }}
-                className="fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300"
-                animate={{
-                    borderColor: scrollY.get() > 100 ? 'rgba(226, 232, 240, 0.8)' : 'transparent'
-                }}
+        <div className="min-h-screen bg-black text-white overflow-x-hidden">
+            {/* Navigation */}
+            <motion.nav
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-xl border-b border-white/10"
             >
-                <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 group">
-                        <motion.div
-                            className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg group-hover:shadow-purple-300 transition-all"
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            transition={{ type: "spring", stiffness: 400 }}
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-emerald-500 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-black" />
+                        </div>
+                        <span className="text-xl font-bold bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
+                            AI Analyst
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate('/login')}
+                            className="text-white hover:text-accent"
                         >
-                            <BarChart3 className="w-5 h-5 text-white" />
-                        </motion.div>
-                        <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">Antigravity</span>
-                    </Link>
+                            Sign In
+                        </Button>
+                        <Button
+                            onClick={() => navigate('/register')}
+                            className="bg-gradient-to-r from-accent to-emerald-500 hover:from-accent/90 hover:to-emerald-500/90 text-black font-semibold"
+                        >
+                            Get Started
+                        </Button>
+                    </div>
+                </div>
+            </motion.nav>
 
-                    {/* Desktop Nav */}
-                    <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-                        <motion.a
-                            href="#features"
-                            className="hover:text-foreground transition-colors relative group"
-                            whileHover={{ y: -2 }}
-                        >
-                            Features
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-blue-600 group-hover:w-full transition-all duration-300" />
-                        </motion.a>
-                        <motion.a
-                            href="#testimonials"
-                            className="hover:text-foreground transition-colors relative group"
-                            whileHover={{ y: -2 }}
-                        >
-                            Testimonials
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-blue-600 group-hover:w-full transition-all duration-300" />
-                        </motion.a>
-                        <motion.a
-                            href="#pricing"
-                            className="hover:text-foreground transition-colors relative group"
-                            whileHover={{ y: -2 }}
-                        >
-                            Pricing
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-600 to-blue-600 group-hover:w-full transition-all duration-300" />
-                        </motion.a>
-                        {isAuthenticated ? (
-                            <Link to="/dashboard">
-                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                    <Button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 rounded-lg h-10 px-6 font-semibold shadow-lg shadow-purple-200 overflow-hidden transition-all">
-                                        Go to Dashboard
-                                    </Button>
-                                </motion.div>
-                            </Link>
-                        ) : (
-                            <div className="flex items-center gap-4">
-                                <motion.div whileHover={{ y: -2 }}>
-                                    <Link to="/login" className="hover:text-foreground transition-colors">Login</Link>
-                                </motion.div>
-                                <Link to="/get-started">
-                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <Button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 rounded-lg h-10 px-6 font-semibold shadow-lg shadow-purple-200 overflow-hidden transition-all">
-                                            Get Started
-                                        </Button>
-                                    </motion.div>
-                                </Link>
-                            </div>
-                        )}
-                    </nav>
-
-                    {/* Mobile Toggle */}
-                    <motion.button
-                        className="md:hidden p-2 text-foreground hover:bg-slate-100 rounded-lg transition-colors"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        whileTap={{ scale: 0.9 }}
-                    >
-                        {isMenuOpen ? <X /> : <Menu />}
-                    </motion.button>
+            {/* Hero Section */}
+            <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+                {/* Animated Background Grid */}
+                <div className="absolute inset-0 opacity-20">
+                    <div className="absolute inset-0" style={{
+                        backgroundImage: `linear-gradient(to right, #00bfa5 1px, transparent 1px),
+                                        linear-gradient(to bottom, #00bfa5 1px, transparent 1px)`,
+                        backgroundSize: '80px 80px',
+                        transform: `translateY(${scrollY * 0.5}px)`
+                    }} />
                 </div>
 
-                {/* Mobile Menu */}
-                {isMenuOpen && (
+                {/* Glowing Orbs */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
+
+                <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
                     <motion.div
-                        initial={{ opacity: 0, y: -20, height: 0 }}
-                        animate={{ opacity: 1, y: 0, height: 'auto' }}
-                        exit={{ opacity: 0, y: -20, height: 0 }}
-                        className="md:hidden absolute top-20 left-0 right-0 glass border-b border-border p-6 flex flex-col gap-4 shadow-2xl"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
                     >
-                        <motion.a
-                            href="#features"
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                            whileHover={{ x: 5 }}
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.5 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-8"
                         >
-                            Features
-                        </motion.a>
-                        <motion.a
-                            href="#testimonials"
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                            whileHover={{ x: 5 }}
-                        >
-                            Testimonials
-                        </motion.a>
-                        <motion.a
-                            href="#pricing"
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                            whileHover={{ x: 5 }}
-                        >
-                            Pricing
-                        </motion.a>
-                        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-2" />
-                        <Link to="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
-                            Login
-                        </Link>
-                        <Link to="/get-started" onClick={() => setIsMenuOpen(false)}>
-                            <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg py-3 h-auto font-bold shadow-lg">
-                                Get Started
-                            </Button>
-                        </Link>
-                    </motion.div>
-                )}
-            </motion.header>
+                            <Zap className="w-4 h-4 text-accent" />
+                            <span className="text-sm text-accent">Powered by Advanced AI</span>
+                        </motion.div>
 
-            <main>
-                <Hero />
-                <div id="features" className="scroll-mt-20">
-                    <Features />
+                        <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
+                            <span className="block bg-gradient-to-r from-white via-accent to-emerald-400 bg-clip-text text-transparent">
+                                Data Analysis
+                            </span>
+                            <span className="block bg-gradient-to-r from-emerald-400 via-accent to-white bg-clip-text text-transparent">
+                                Made Simple
+                            </span>
+                        </h1>
+
+                        <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto">
+                            Ask questions in plain English. Get powerful insights instantly.
+                            <span className="text-accent"> No SQL required.</span>
+                        </p>
+
+                        <div className="flex items-center justify-center gap-4">
+                            <Button
+                                onClick={() => navigate('/register')}
+                                size="lg"
+                                className="bg-gradient-to-r from-accent to-emerald-500 hover:from-accent/90 hover:to-emerald-500/90 text-black font-semibold text-lg px-8 py-6 shadow-[0_0_30px_rgba(0,191,165,0.3)] hover:shadow-[0_0_50px_rgba(0,191,165,0.5)] transition-all"
+                            >
+                                Start Analyzing Free
+                                <ArrowRight className="w-5 h-5 ml-2" />
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/login')}
+                                size="lg"
+                                variant="outline"
+                                className="border-accent/30 text-accent hover:bg-accent/10 text-lg px-8 py-6"
+                            >
+                                Watch Demo
+                            </Button>
+                        </div>
+                    </motion.div>
+
+                    {/* Scroll Indicator */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.5 }}
+                        className="absolute bottom-10 left-1/2 -translate-x-1/2"
+                    >
+                        <motion.div
+                            animate={{ y: [0, 10, 0] }}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                        >
+                            <ChevronDown className="w-8 h-8 text-accent" />
+                        </motion.div>
+                    </motion.div>
                 </div>
-                <div id="testimonials" className="scroll-mt-20">
-                    <Testimonials />
+            </section>
+
+            {/* Features Grid */}
+            <section className="py-32 relative">
+                <div className="max-w-7xl mx-auto px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                        className="text-center mb-20"
+                    >
+                        <h2 className="text-5xl font-bold mb-6">
+                            <span className="bg-gradient-to-r from-accent to-emerald-400 bg-clip-text text-transparent">
+                                Powerful Features
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                            Everything you need to turn your data into actionable insights
+                        </p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {features.map((feature, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.1, duration: 0.5 }}
+                                whileHover={{ y: -5, scale: 1.02 }}
+                                className="group relative p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/0 border border-white/10 hover:border-accent/30 transition-all duration-300 overflow-hidden"
+                            >
+                                {/* Hover Gradient */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+
+                                <div className="relative">
+                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                        <feature.icon className="w-7 h-7 text-black" />
+                                    </div>
+
+                                    <h3 className="text-2xl font-semibold mb-3 text-white group-hover:text-accent transition-colors">
+                                        {feature.title}
+                                    </h3>
+
+                                    <p className="text-gray-400">
+                                        {feature.description}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
-                <div id="pricing" className="scroll-mt-20">
-                    <Pricing />
+            </section>
+
+            {/* CTA Section */}
+            <section className="py-32 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-accent/10 to-transparent" />
+                <div className="absolute inset-0">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/20 rounded-full blur-[200px]" />
                 </div>
-                <FAQ />
-            </main>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="relative z-10 max-w-4xl mx-auto px-6 text-center"
+                >
+                    <h2 className="text-5xl md:text-6xl font-bold mb-6">
+                        <span className="bg-gradient-to-r from-white via-accent to-emerald-400 bg-clip-text text-transparent">
+                            Ready to Transform Your Data?
+                        </span>
+                    </h2>
+
+                    <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+                        Join thousands of businesses using AI Analyst to make data-driven decisions faster
+                    </p>
+
+                    <Button
+                        onClick={() => navigate('/register')}
+                        size="lg"
+                        className="bg-gradient-to-r from-accent to-emerald-500 hover:from-accent/90 hover:to-emerald-500/90 text-black font-semibold text-lg px-12 py-7 shadow-[0_0_40px_rgba(0,191,165,0.4)] hover:shadow-[0_0_60px_rgba(0,191,165,0.6)] transition-all"
+                    >
+                        Get Started for Free
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+
+                    <p className="text-sm text-gray-500 mt-6">
+                        No credit card required • Free forever plan available
+                    </p>
+                </motion.div>
+            </section>
 
             {/* Footer */}
-            <footer className="py-20 bg-gradient-to-br from-slate-50 via-purple-50/20 to-blue-50/20 border-t border-slate-100">
-                <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                        <div className="col-span-1 md:col-span-2">
-                            <div className="flex items-center gap-2 mb-6 text-foreground">
-                                <motion.div
-                                    className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center"
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
-                                >
-                                    <BarChart3 className="w-5 h-5 text-white" />
-                                </motion.div>
-                                <span className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">Antigravity</span>
-                            </div>
-                            <p className="text-muted-foreground max-w-sm mb-8 leading-relaxed">
-                                Universal analytical intelligence for modern teams. Transform raw data into executive narratives in seconds.
-                            </p>
-                            <div className="flex gap-4">
-                                <motion.a
-                                    href="#"
-                                    className="w-9 h-9 rounded-lg glass border border-border flex items-center justify-center hover:border-purple-300 transition-colors shadow-sm"
-                                    whileHover={{ scale: 1.1, y: -2 }}
-                                >
-                                    <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" /></svg>
-                                </motion.a>
-                                <motion.a
-                                    href="#"
-                                    className="w-9 h-9 rounded-lg glass border border-border flex items-center justify-center hover:border-blue-300 transition-colors shadow-sm"
-                                    whileHover={{ scale: 1.1, y: -2 }}
-                                >
-                                    <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12c0-5.523-4.477-10-10-10z" /></svg>
-                                </motion.a>
-                            </div>
+            <footer className="border-t border-white/10 py-12">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-accent to-emerald-500" />
+                            <span className="font-semibold text-gray-400">AI Analyst</span>
                         </div>
-                        <div>
-                            <h4 className="font-bold mb-6 text-xs text-foreground border-b border-border pb-2">Platform</h4>
-                            <ul className="space-y-4 text-sm text-muted-foreground">
-                                <li>
-                                    <motion.a
-                                        href="#features"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Features
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#pricing"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Pricing
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        API Keys
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Infrastructure
-                                    </motion.a>
-                                </li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-bold mb-6 text-xs text-foreground border-b border-border pb-2">Resources</h4>
-                            <ul className="space-y-4 text-sm text-muted-foreground">
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        System Status
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Security
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Privacy
-                                    </motion.a>
-                                </li>
-                                <li>
-                                    <motion.a
-                                        href="#"
-                                        className="hover:text-purple-600 transition-colors inline-block"
-                                        whileHover={{ x: 3 }}
-                                    >
-                                        Terms
-                                    </motion.a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-400">
-                        <span>© 2024 Antigravity AI. Independent Analysis.</span>
-                        <div className="flex gap-8">
-                            <span className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                Operational
-                            </span>
-                            <span className="gradient-text font-semibold">Powered by Gemini</span>
-                        </div>
+                        <p className="text-gray-500 text-sm">
+                            © 2024 AI Analyst. All rights reserved.
+                        </p>
                     </div>
                 </div>
             </footer>
         </div>
-    )
+    );
 }
-
-export default LandingPage
