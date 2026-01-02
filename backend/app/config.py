@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-1.5-flash-001"
     GOOGLE_CLIENT_ID: Optional[str] = None
     
+    # Email Configuration
+    GMAIL_USER: Optional[str] = None
+    GMAIL_APP_PASSWORD: Optional[str] = None
+    EMAIL_FROM_NAME: str = "AI Data Analyst"
+    RESET_PASSWORD_URL: str = "http://localhost:5174/reset-password"
+    
     # File Upload
     UPLOAD_DIR: str = "./uploads"
     VECTOR_DB_DIR: str = "./vector_db"

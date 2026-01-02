@@ -164,6 +164,120 @@ async def refresh_token(data: RefreshRequest, db: Session = Depends(get_db)):
     }
 
 
+# Password Reset Endpoints
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Request password reset email"""
+    from ..models import PasswordResetToken
+    from ..services.email_service import email_service
+    import uuid
+    from datetime import datetime, timedelta
+    
+    # Find user
+    user = db.query(User).filter(User.email == request.email).first()
+    
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"message": "If the email exists, a reset link has been sent"}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+    
+    # Delete any existing unused tokens for this user
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used == False
+    ).delete()
+    
+    # Create new token
+    token_record = PasswordResetToken(
+        user_id=user.id,
+        token=reset_token,
+        expires_at=expires_at
+    )
+    db.add(token_record)
+    db.commit()
+    
+    # Send email
+    email_sent = email_service.send_password_reset_email(user.email, reset_token)
+    
+    if not email_sent:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send reset email. Please check email configuration."
+        )
+    
+    return {"message": "If the email exists, a reset link has been sent"}
+
+
+@router.get("/verify-reset-token/{token}")
+async def verify_reset_token(token: str, db: Session = Depends(get_db)):
+    """Verify if reset token is valid"""
+    from ..models import PasswordResetToken
+    from datetime import datetime
+    
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token,
+        PasswordResetToken.used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    return {"valid": token_record is not None}
+
+
+@router.post("/reset-password")
+async def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Reset password using token"""
+    from ..models import PasswordResetToken
+    from datetime import datetime
+    import bcrypt
+    
+    # Find valid token
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == request.token,
+        PasswordResetToken.used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+    
+    if not token_record:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token"
+        )
+    
+    # Get user
+    user = db.query(User).filter(User.id == token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Hash new password
+    hashed_password = bcrypt.hashpw(
+        request.new_password.encode('utf-8'),
+        bcrypt.gensalt()
+    ).decode('utf-8')
+    
+    # Update password
+    user.hashed_password = hashed_password
+    
+    # Mark token as used
+    token_record.used = True
+    
+    db.commit()
+    
+    return {"message": "Password reset successful"}
+
+
 @router.post("/google", response_model=Token)
 async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     """Login or register via Google OAuth"""
