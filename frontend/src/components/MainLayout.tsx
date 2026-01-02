@@ -60,6 +60,21 @@ export default function MainLayout() {
         navigate('/login');
     };
 
+    const handleDeleteDataset = async (datasetId: number) => {
+        if (confirm('Are you sure you want to delete this dataset?')) {
+            try {
+                await datasetsAPI.delete(datasetId);
+                await loadDatasets();
+                if (selectedDataset === datasetId) {
+                    setSelectedDataset(datasets.length > 1 ? datasets[0].id : null);
+                }
+            } catch (error) {
+                console.error('Error deleting dataset:', error);
+                alert('Failed to delete dataset');
+            }
+        }
+    };
+
     return (
         <div className="flex h-screen bg-background overflow-hidden">
             {/* Left Sidebar */}
@@ -91,36 +106,23 @@ export default function MainLayout() {
                             Datasets
                         </div>
                         <div className="space-y-0.5">
-                            <Link
-                                to="/datasets"
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                            >
-                                <Database className="w-4 h-4 shrink-0" />
-                                <span>Advertising.csv</span>
-                            </Link>
-                            <Link
-                                to="/datasets"
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                            >
-                                <Database className="w-4 h-4 shrink-0" />
-                                <span>Sales.csv</span>
-                            </Link>
-                            <Link
-                                to="/datasets"
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                            >
-                                <Database className="w-4 h-4 shrink-0" />
-                                <span>Customers.csv</span>
-                            </Link>
-                            {datasets.slice(3).map((dataset) => (
-                                <Link
-                                    key={dataset.id}
-                                    to="/datasets"
-                                    className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
-                                >
-                                    <Database className="w-4 h-4 shrink-0" />
-                                    <span className="truncate">{dataset.name}</span>
-                                </Link>
+                            {datasets.map((dataset) => (
+                                <div key={dataset.id} className="group relative">
+                                    <Link
+                                        to="/datasets"
+                                        className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all pr-8"
+                                    >
+                                        <Database className="w-4 h-4 shrink-0" />
+                                        <span className="truncate">{dataset.name}</span>
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDeleteDataset(dataset.id)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white text-muted-foreground"
+                                        title="Delete dataset"
+                                    >
+                                        <span className="text-xs">×</span>
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -161,18 +163,33 @@ export default function MainLayout() {
 
                         {/* Dataset Tabs */}
                         <div className="flex items-center gap-1.5 ml-2">
-                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-muted text-foreground border border-border">
-                                <Database className="w-3 h-3 text-accent" />
-                                Advertising.csv
-                            </button>
-                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted transition-colors">
-                                <Database className="w-3 h-3 text-orange-500" />
-                                Sales.csv
-                            </button>
-                            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground hover:bg-muted transition-colors">
-                                <Database className="w-3 h-3 text-purple-500" />
-                                Customers.csv
-                            </button>
+                            {datasets.slice(0, 3).map((dataset, idx) => {
+                                const colors = ['text-accent', 'text-orange-500', 'text-purple-500'];
+                                const isSelected = selectedDataset === dataset.id;
+                                return (
+                                    <div key={dataset.id} className="group relative">
+                                        <button
+                                            onClick={() => setSelectedDataset(dataset.id)}
+                                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${isSelected
+                                                ? 'bg-muted text-foreground border border-border'
+                                                : 'text-muted-foreground hover:bg-muted'
+                                                }`}
+                                        >
+                                            <Database className={`w-3 h-3 ${colors[idx]}`} />
+                                            <span>{dataset.name}</span>
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteDataset(dataset.id);
+                                            }}
+                                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-muted border border-border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white"
+                                        >
+                                            <span className="text-[10px]">×</span>
+                                        </button>
+                                    </div>
+                                );
+                            })}
                             <Link to="/datasets">
                                 <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground">
                                     <Plus className="w-3.5 h-3.5 mr-1" />
