@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { datasetsAPI } from '../lib/api';
+import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Download, RefreshCw, Search } from 'lucide-react';
 import { Input } from '../components/ui/input';
@@ -22,8 +22,13 @@ export default function DataViewPage() {
     const loadDataset = async () => {
         try {
             setLoading(true);
-            const response = await datasetsAPI.get(Number(datasetId));
-            setDataset(response.data);
+            // Fetch full data using the new endpoint
+            const response = await api.get(`/datasets/${datasetId}/data`);
+            setDataset({
+                ...response.data.dataset_info,
+                sample_data: response.data.data,
+                columns: response.data.columns
+            });
         } catch (error) {
             console.error('Error loading dataset:', error);
         } finally {
