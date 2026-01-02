@@ -42,6 +42,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [showDatasetsModal, setShowDatasetsModal] = useState(false);
 
     useEffect(() => {
         loadDatasets();
@@ -211,7 +212,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <Button variant="ghost" size="sm" className="p-1.5 h-auto">
                             <RefreshCw className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="p-1.5 h-auto">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1.5 h-auto"
+                            onClick={() => setShowDatasetsModal(true)}
+                        >
                             <Grid3x3 className="w-4 h-4 text-muted-foreground" />
                         </Button>
                         <Link to="/settings">
@@ -227,6 +233,100 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {children || <Outlet />}
                 </main>
             </div>
+
+            {/* Datasets Modal */}
+            {showDatasetsModal && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowDatasetsModal(false)}
+                >
+                    <div
+                        className="bg-card border border-border rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="border-b border-border px-6 py-4 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold text-foreground">All Datasets</h2>
+                                <p className="text-sm text-muted-foreground mt-0.5">
+                                    {datasets.length} dataset{datasets.length !== 1 ? 's' : ''} uploaded
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowDatasetsModal(false)}
+                                className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
+                            >
+                                <span className="text-xl text-muted-foreground">×</span>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+                            {datasets.length === 0 ? (
+                                <div className="text-center py-16">
+                                    <Database className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                                    <p className="text-muted-foreground">No datasets uploaded yet</p>
+                                    <Link to="/datasets">
+                                        <Button className="mt-4 bg-accent hover:bg-accent/90">
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Upload Dataset
+                                        </Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border">
+                                    {datasets.map((dataset) => (
+                                        <div
+                                            key={dataset.id}
+                                            className="px-6 py-4 hover:bg-muted/30 transition-colors group"
+                                        >
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-start gap-3 flex-1">
+                                                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <Database className="w-5 h-5 text-accent" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-medium text-foreground mb-1">{dataset.name}</h3>
+                                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                            <span>{dataset.row_count?.toLocaleString() || 0} rows</span>
+                                                            <span>•</span>
+                                                            <span>{dataset.column_count || 0} columns</span>
+                                                            <span>•</span>
+                                                            <span>{new Date(dataset.created_at).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8"
+                                                        onClick={() => {
+                                                            setSelectedDataset(dataset.id);
+                                                            setShowDatasetsModal(false);
+                                                            navigate('/analytics');
+                                                        }}
+                                                    >
+                                                        Analyze
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => handleDeleteDataset(dataset.id)}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
