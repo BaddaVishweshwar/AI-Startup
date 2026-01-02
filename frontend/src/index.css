@@ -2,67 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dark Mode - CamelAI Style with Emerald/Teal/Purple Accents */
+/* Pure Black Theme - ChatGPT/Perplexity/CamelAI Style */
 #root {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #18181b 100%);
-  background-attachment: fixed;
+  background-color: #000000;
 }
 
 @layer base {
   :root {
-    /* Dark Mode - CamelAI Style with Emerald/Teal/Purple */
-    --background: 222 47% 11%;
-    /* Dark slate */
-    --foreground: 210 40% 98%;
-    /* Light text */
-    --card: 217 33% 17%;
-    /* Dark card */
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
+    /* Pure Black Theme - Minimal */
+    --background: 0 0% 0%;
+    /* Pure black */
+    --foreground: 0 0% 98%;
+    /* Off-white text */
+    --card: 0 0% 5%;
+    /* Very dark gray for cards */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
     --primary: 160 84% 39%;
-    /* Emerald-600 */
+    /* Emerald-600 accent */
     --primary-foreground: 0 0% 100%;
-    --secondary: 174 84% 40%;
-    /* Teal-500 */
-    --secondary-foreground: 0 0% 100%;
-    --accent: 270 91% 65%;
-    /* Purple-400 */
+    --secondary: 0 0% 10%;
+    /* Dark gray */
+    --secondary-foreground: 0 0% 98%;
+    --accent: 160 84% 39%;
+    /* Emerald for highlights */
     --accent-foreground: 0 0% 100%;
-    --muted: 217 33% 17%;
-    /* Dark muted */
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 8%;
+    /* Subtle dark */
+    --muted-foreground: 0 0% 65%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 23%;
-    /* Subtle border */
-    --input: 217 33% 23%;
+    --border: 0 0% 15%;
+    /* Very subtle borders */
+    --input: 0 0% 10%;
     --ring: 160 84% 39%;
-    --radius: 0.75rem;
-  }
-
-  .dark {
-    /* Same as root for consistency */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 174 84% 40%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 270 91% 65%;
-    --accent-foreground: 0 0% 100%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 23%;
-    --input: 217 33% 23%;
-    --ring: 160 84% 39%;
+    --radius: 0.5rem;
   }
 }
 
@@ -73,182 +49,53 @@
     scroll-behavior: smooth;
   }
 
-  /* Animated Gradient Background - Dark Mode */
-  .animated-gradient {
-    background: linear-gradient(-45deg, #10b981, #14b8a6, #a855f7, #06b6d4);
-    background-size: 400% 400%;
-    animation: gradient 15s ease infinite;
-  }
-
-  .animated-gradient-subtle {
-    background: linear-gradient(-45deg, #1e293b, #312e81, #27272a, #1e3a8a);
-    background-size: 400% 400%;
-    animation: gradient 20s ease infinite;
-  }
-
-  @keyframes gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-
-    50% {
-      background-position: 100% 50%;
-    }
-
-    100% {
-      background-position: 0% 50%;
-    }
-  }
-
-  /* Gradient Text - Emerald to Purple */
+  /* Minimal gradient for accents only */
   .gradient-text {
-    background: linear-gradient(135deg, #10b981 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .gradient-text-vibrant {
-    background: linear-gradient(135deg, #14b8a6 0%, #c026d3 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Glassmorphism - Dark Mode */
+  /* Minimal glass effect for hover states */
   .glass {
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(16, 185, 129, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  .glass-dark {
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(168, 85, 247, 0.2);
+  /* Smooth fade in */
+  .fade-in {
+    animation: fade-in 0.3s ease-out;
   }
 
-  /* Floating Animation */
-  .float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes float {
-
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-
-    50% {
-      transform: translateY(-20px);
-    }
-  }
-
-  /* Pulse Glow - Emerald */
-  .pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-glow {
-
-    0%,
-    100% {
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-    }
-
-    50% {
-      box-shadow: 0 0 40px rgba(16, 185, 129, 0.8), 0 0 60px rgba(168, 85, 247, 0.3);
-    }
-  }
-
-  /* Shimmer Effect */
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .shimmer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(16, 185, 129, 0.2),
-        transparent);
-    animation: shimmer 3s infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      left: -100%;
-    }
-
-    100% {
-      left: 100%;
-    }
-  }
-
-  /* Bounce In */
-  .bounce-in {
-    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  @keyframes bounce-in {
-    0% {
-      transform: scale(0.8);
-      opacity: 0;
-    }
-
-    50% {
-      transform: scale(1.05);
-    }
-
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  /* Fade In Up */
-  .fade-in-up {
-    animation: fade-in-up 0.6s ease-out;
-  }
-
-  @keyframes fade-in-up {
+  @keyframes fade-in {
     from {
       opacity: 0;
-      transform: translateY(30px);
     }
 
     to {
       opacity: 1;
-      transform: translateY(0);
     }
   }
 
-  /* Custom Scrollbar - Dark Mode */
+  /* Custom Scrollbar - Pure Black */
   ::-webkit-scrollbar {
-    width: 10px;
+    width: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #1e293b;
+    background: #000000;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 5px;
+    background: #1a1a1a;
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: #2a2a2a;
   }
 }
 
