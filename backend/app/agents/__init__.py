@@ -64,6 +64,10 @@ class ColumnMetadata(BaseModel):
     max_value: Optional[Any] = None
     avg_value: Optional[float] = None
     std_dev: Optional[float] = None
+    
+    # NEW: Top values with frequencies (for categorical and low-cardinality numeric)
+    top_values: List[Dict[str, Any]] = Field(default_factory=list)  # [{"value": "X", "count": 100, "percentage": 10.5}]
+
 
 
 
@@ -160,6 +164,12 @@ class AnalysisResponse(BaseModel):
     Final wrapper for all agents' outputs.
     This is what the wrapper service returns to the API.
     """
+    # NEW: CamelAI-Grade Fields
+    understanding: str = "Analyzing data..."  # "You're asking about..."
+    approach: str = "Direct analysis"  # "To answer this, I will..."
+    exploratory_steps: List[Dict[str, Any]] = Field(default_factory=list)  # Preliminary query results
+    
+    # EXISTING
     intent: IntentResult
     schema_analysis: Optional[SchemaAnalysis] = None
     query_requirements: QueryRequirements
@@ -170,3 +180,4 @@ class AnalysisResponse(BaseModel):
     insights: Insights
     reasoning_steps: List[str]
     total_time_ms: int = 0
+

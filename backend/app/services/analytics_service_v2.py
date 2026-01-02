@@ -18,6 +18,9 @@ from ..agents.analysis_planner_agent import analysis_planner
 from ..agents.visualization_selector_agent import visualization_selector
 from ..agents.insight_generator_agent import insight_generator
 from ..agents.data_interpretation_agent import data_interpretation_agent
+# NEW: CamelAI-Grade Agents
+from ..agents.query_planner_agent import query_planner
+from ..agents.exploration_agent import exploration_agent
 from ..agents import (
     AnalysisResponse, ExecutionResult, IntentResult, 
     SchemaAnalysis, QueryRequirements, AnalysisPlan, VizConfig, Insights, InterpretationResult
@@ -28,25 +31,29 @@ logger = logging.getLogger(__name__)
 
 class AnalyticsServiceV2:
     """
-    Multi-agent pipeline orchestrator:
+    Multi-agent pipeline orchestrator (CamelAI-Grade):
     
     User Query
        ↓
     1. Intent Classification
        ↓
-    2. Schema Analysis (cached)
+    2. Schema Analysis (cached, now with samples + stats)
        ↓
-    3. Query Understanding
+    3. Query Planning (NEW - breaks down question)
        ↓
-    4. Analysis Planning
+    4. Exploration (NEW - runs 2-3 preliminary queries)
        ↓
-    5. Plan Validation
+    5. Query Understanding
        ↓
-    6. Deterministic Execution
+    6. Analysis Planning (informed by exploration)
        ↓
-    7. Visualization Selection
+    7. Deterministic Execution
        ↓
-    8. Insight Generation
+    8. Data Interpretation
+       ↓
+    9. Visualization Selection
+       ↓
+    10. Insight Generation (uses ALL context)
        ↓
     Final Response
     """
@@ -130,6 +137,33 @@ class AnalyticsServiceV2:
             
             # Prepare history for agents
             history = context.get('history', []) if context else []
+            
+            # Step 3.5: Query Planning (NEW - CamelAI Grade)
+            logger.info("Step 3.5/10: Planning comprehensive analysis...")
+            planning_result = query_planner.plan(
+                query=resolved_query,
+                schema_analysis=schema_analysis,
+                df=df,
+                conversation_history="\n".join([f"{h.get('role', 'user')}: {h.get('content', '')}" for h in history[-3:]])
+            )
+            reasoning_steps.append(f"Analysis approach: {planning_result.approach}")
+            logger.info(f"✅ Planning complete: {len(planning_result.sub_questions)} sub-questions")
+            
+            # Step 4: Exploration (NEW - CamelAI Grade)
+            logger.info("Step 4/10: Running exploratory analysis...")
+            exploration_results = exploration_agent.explore(
+                sub_questions=planning_result.sub_questions,
+                df=df,
+                schema_analysis=schema_analysis,
+                max_queries=3
+            )
+            
+            # Convert to dict for serialization
+            exploration_dicts = [exp.to_dict() for exp in exploration_results]
+            
+            for i, exp in enumerate(exploration_results, 1):
+                reasoning_steps.append(f"Exploration {i}: {exp.finding}")
+            logger.info(f"✅ Exploration complete: {len(exploration_results)} queries executed")
 
             # Steps 4-6: Planning & Execution Loop (with Retry)
             execution_result = None
@@ -137,9 +171,9 @@ class AnalyticsServiceV2:
             MAX_RETRIES = 2
             
             for attempt in range(MAX_RETRIES + 1):
-                logger.info(f"Step 4/8: Creating analysis plan (Attempt {attempt+1})...")
+                logger.info(f"Step 5/10: Creating main analysis plan (Attempt {attempt+1})...")
                 
-                # Step 4: Analysis Planning
+                # Step 5: Analysis Planning (now informed by exploration)
                 plan = analysis_planner.plan(
                     query=resolved_query,
                     requirements=requirements,
@@ -162,7 +196,7 @@ class AnalyticsServiceV2:
                     reasoning_steps.append(f"Refined analysis plan (Attempt {attempt+1})")
                 
                 # Step 6: Deterministic Execution
-                logger.info(f"Step 6/8: Executing query (Attempt {attempt+1})...")
+                logger.info(f"Step 6/10: Executing main query (Attempt {attempt+1})...")
                 exec_start = time.time()
                 
                 # Execute Main Query
@@ -221,7 +255,7 @@ class AnalyticsServiceV2:
                 )
             
             # Step 7: Visualization Selection
-            logger.info("Step 7/8: Selecting visualization...")
+            logger.info("Step 7/10: Selecting visualization...")
             visualizations = visualization_selector.select(
                 intent=intent,
                 execution_result=execution_result,
@@ -230,30 +264,36 @@ class AnalyticsServiceV2:
             
             reasoning_steps.append(f"Visualizations selected: {len(visualizations)} charts")
             
-            # Step 7.5: Data Interpretation (Reasoning Layer)
-            logger.info("Step 7.5/8: Interpreting data...")
+            # Step 8: Data Interpretation (Reasoning Layer)
+            logger.info("Step 8/10: Interpreting data...")
             interpretation = data_interpretation_agent.interpret(
                 execution_result=execution_result,
                 intent=intent
             )
             reasoning_steps.append(f"Data interpretation: {interpretation.main_finding}")
 
-            # Step 8: Insight Generation
-            logger.info("Step 8/8: Generating insights...")
+            # Step 9: Insight Generation (with ALL context - CamelAI Grade)
+            logger.info("Step 9/10: Generating executive insights...")
             insights = insight_generator.generate(
                 query=query,
                 execution_result=execution_result,
                 intent=intent,
                 interpretation=interpretation,
+                exploration_findings=exploration_dicts,  # NEW: Pass exploration context
                 conversation_history=history
             )
             
             reasoning_steps.append(f"Insights generated with {insights.confidence:.0%} confidence")
             
-            # Build final response
+            # Build final response (CamelAI-Grade structure)
             total_time = int((time.time() - start_time) * 1000)
             
             response = AnalysisResponse(
+                # NEW: CamelAI fields
+                understanding=planning_result.understanding,
+                approach=planning_result.approach,
+                exploratory_steps=exploration_dicts,
+                # EXISTING
                 intent=intent,
                 schema_analysis=schema_analysis,
                 query_requirements=requirements,
@@ -267,6 +307,7 @@ class AnalyticsServiceV2:
             )
             
             logger.info(f"✅ Analysis complete in {total_time}ms")
+            logger.info(f"Summary: {len(exploration_results)} explorations, {len(execution_result.data)} result rows, {len(visualizations)} charts")
             
             return response
             

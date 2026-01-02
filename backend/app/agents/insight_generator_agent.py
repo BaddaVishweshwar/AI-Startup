@@ -39,6 +39,7 @@ class InsightGeneratorAgent:
         execution_result: ExecutionResult,
         intent: IntentResult,
         interpretation: InterpretationResult,
+        exploration_findings: List[Dict[str, Any]] = None,
         conversation_history: List[Dict[str, str]] = []
     ) -> Insights:
         """
@@ -49,6 +50,7 @@ class InsightGeneratorAgent:
             execution_result: Execution results with data and metrics
             intent: Query intent
             interpretation: Statistical interpretation findings
+            exploration_findings: Preliminary query results for context
             conversation_history: Recent conversation history
             
         Returns:
@@ -66,84 +68,53 @@ class InsightGeneratorAgent:
                 data_sufficiency="insufficient"
             )
         
-        # Limit data for context (avoid token overflow)
+        # Use new professional prompt template
+        from ..services.prompt_templates import INSIGHT_GENERATION_PROMPT
+        
+        # Format exploration findings
+        exploration_text = ""
+        if exploration_findings:
+            exploration_text = "EXPLORATORY FINDINGS (Context from preliminary analysis):\n"
+            for exp in exploration_findings:
+                exploration_text += f"- {exp.get('finding', 'N/A')}\n"
+                exploration_text += f"  SQL: {exp.get('sql', 'N/A')[:100]}...\n"
+        else:
+            exploration_text = "No exploratory analysis available."
+        
+        # Format main results (limit to prevent token overflow)
         limited_data = execution_result.data[:10]
+        main_results = json.dumps(limited_data, indent=2, default=str)
         
-        # Extract all metrics from execution result
-        metrics_summary = self._extract_metrics(execution_result)
+        # Format interpretation summary
+        interpretation_summary = f"""
+Main Finding: {interpretation.main_finding}
+Outliers Detected: {', '.join(interpretation.outliers) if interpretation.outliers else 'None'}
+Top Contributors: {', '.join(interpretation.top_contributors) if interpretation.top_contributors else 'None'}
+Trends: {', '.join(interpretation.trends) if interpretation.trends else 'None detected'}
+Warnings: {', '.join(interpretation.warnings) if interpretation.warnings else 'None'}
+"""
         
-
-        # Format intermediate results
+        # Format supporting context
         supporting_context = ""
         if execution_result.intermediate_results:
-            supporting_context = "CONTEXT FROM SUPPORTING QUERIES:\n"
+            supporting_context = "SUPPORTING QUERY RESULTS:\n"
             for name, data in execution_result.intermediate_results.items():
                 supporting_context += f"- {name}: {json.dumps(data[:3], default=str)}\n"
-
-        # Format history
-        history_str = ""
-        if conversation_history:
-            history_str = "PREVIOUS CONVERSATION (Use for comparison context):\n"
-            for msg in conversation_history[-3:]: 
-                history_str += f"- {msg['role'].upper()}: {msg['content']}\n"
         
-        prompt = f"""You are an Expert Senior Business Analyst & Strategy Consultant (ex-McKinsey/Bain). 
-Your goal is to provide executive-level insights that answer the user's business question directly, backed by data.
-
-USER QUERY: "{query}"
-INTENT: {intent.intent.value}
-
-{history_str}
-
-STATISTICAL FINDINGS (Use these to drive 'Why' and 'Implications'):
-- Main Finding: {interpretation.main_finding}
-- Outliers: {", ".join(interpretation.outliers)}
-- Top Contributors: {", ".join(interpretation.top_contributors)}
-- Trends: {", ".join(interpretation.trends) if interpretation.trends else "None detected"}
-
-DATA RESULTS (first 10 rows):
-{json.dumps(limited_data, indent=2, default=str)}
-
- {supporting_context}
-
-COMPUTED METRICS:
-{json.dumps(metrics_summary, indent=2, default=str)}
-
-TOTAL ROWS: {execution_result.row_count}
-
-CRITICAL RULES:
-1. **Direct Answer First**: Start with a clear, direct answer to the user's question.
-2. **Data-Driven**: NEVER invent numbers. ONLY use metrics from the provided data.
-3. **Strategic Tone**: Use professional, executive terminology (e.g., "driven by", "accounting for", "represents", "year-over-year").
-4. **Structure**: Output strictly in the requested JSON format.
-
-OUTPUT FORMAT (JSON):
-{{
-    "direct_answer": "A concise (2-3 sentences) executive summary answering the question directly.",
-    "what_data_shows": [
-        "Key Finding 1 (e.g., 'Revenue peaked in Q3 at $1.2M')",
-        "Key Finding 2 (e.g., 'Product A accounts for 45% of total volume')",
-        "Key Finding 3"
-    ],
-    "why_it_happened": [
-        "Potential driver 1 (infer from data patterns if possible, e.g., 'Seasonality appears to be a factor...')",
-        "Potential driver 2 (e.g., 'High correlation between X and Y suggests...')"
-    ],
-    "business_implications": [
-        "Strategic Recommendation 1 (e.g., 'Focus marketing efforts on Q3 to capitalize on seasonality')",
-        "Strategic Recommendation 2 (e.g., 'Investigate underperformance in Region X')"
-    ],
-    "confidence": 0.0-1.0,
-    "data_sufficiency": "sufficient|partial|insufficient"
-}}
-
-Respond with ONLY the JSON, no other text."""
-
+        # Build prompt using template
+        prompt = INSIGHT_GENERATION_PROMPT.format(
+            original_question=query,
+            exploratory_findings=exploration_text,
+            main_results=main_results,
+            interpretation_summary=interpretation_summary,
+            supporting_context=supporting_context
+        )
+        
         try:
             response = self.client.generate(
                 model=self.model_name,
                 prompt=prompt,
-                options={"temperature": 0.2, "num_predict": 2048}
+                options={"temperature": 0.7, "num_predict": 2048}  # More creative for narrative writing
             )
             
             # Parse JSON response

@@ -132,6 +132,22 @@ class SchemaAnalyzerAgent:
             except Exception as e:
                 logger.warning(f"Failed to calc datetime stats for {col}: {e}")
 
+        
+        # Calculate top values for categorical or low-cardinality columns
+        top_values = []
+        if col_type in [ColumnType.CATEGORICAL, ColumnType.BOOLEAN] or (col_type == ColumnType.NUMERIC and unique_count <= 10):
+            try:
+                value_counts = series.value_counts().head(5)
+                for value, count in value_counts.items():
+                    percentage = (count / total_count * 100) if total_count > 0 else 0
+                    top_values.append({
+                        "value": str(value),  # Convert to string for JSON serialization
+                        "count": int(count),
+                        "percentage": round(percentage, 2)
+                    })
+            except Exception as e:
+                logger.warning(f"Failed to calc top values for {col}: {e}")
+        
         return ColumnMetadata(
             name=col,
             type=col_type,
@@ -143,7 +159,8 @@ class SchemaAnalyzerAgent:
             min_value=min_val,
             max_value=max_val,
             avg_value=avg_val,
-            std_dev=std_val
+            std_dev=std_val,
+            top_values=top_values
         )
     
     @staticmethod
@@ -250,6 +267,54 @@ class SchemaAnalyzerAgent:
         quality_score = max(0.0, 1.0 - (avg_missing_pct / 100))
         
         return round(quality_score, 2)
+    
+    @staticmethod
+    def get_enriched_schema_prompt(schema_analysis: 'SchemaAnalysis', df: pd.DataFrame = None) -> str:
+        """
+        Generate a rich, multi-line schema description for LLM prompts.
+        
+        Returns formatted string with column details, stats, samples, and top values.
+        """
+        lines = ["**SCHEMA WITH FULL CONTEXT**", ""]
+        lines.append(f"Dataset: {schema_analysis.total_rows} rows, {len(schema_analysis.columns)} columns")
+        lines.append(f"Data Quality Score: {schema_analysis.data_quality_score}/1.0")
+        lines.append("")
+        
+        for col_name, col_meta in schema_analysis.columns.items():
+            lines.append(f"Column: {col_name} ({col_meta.type.value})")
+            
+            # Numeric columns
+            if col_meta.type.value in ['NUMERIC']:
+                if col_meta.min_value is not None and col_meta.max_value is not None:
+                    lines.append(f"  - Range: {col_meta.min_value} to {col_meta.max_value}")
+                if col_meta.avg_value is not None:
+                    std_str = f" ± {col_meta.std_dev:.2f}" if col_meta.std_dev else ""
+                    lines.append(f"  - Average: {col_meta.avg_value:.2f}{std_str}")
+            
+            # Datetime columns
+            elif col_meta.type.value == 'DATETIME':
+                if col_meta.min_value and col_meta.max_value:
+                    lines.append(f"  - Date Range: {col_meta.min_value} to {col_meta.max_value}")
+            
+            # Missing and uniqueness (all types)
+            lines.append(f"  - Missing: {col_meta.missing_percentage}%")
+            lines.append(f"  - Distinct values: {col_meta.unique_count}")
+            
+            # Top values for categorical/low-cardinality
+            if col_meta.top_values:
+                lines.append(f"  - Top values:")
+                for top_val in col_meta.top_values[:5]:
+                    lines.append(f"    • {top_val['value']}: {top_val['count']} ({top_val['percentage']}%)")
+            
+            # Sample values
+            if col_meta.sample_values:
+                sample_str = ", ".join(str(v)[:50] for v in col_meta.sample_values[:5])  # Limit string length
+                lines.append(f"  - Sample values: [{sample_str}]")
+            
+            lines.append("")
+        
+        return "\n".join(lines)
+
 
 
 # Singleton instance
