@@ -12,7 +12,8 @@ import {
     Plus,
     RefreshCw,
     Grid3x3,
-    ChevronLeft
+    ChevronLeft,
+    FolderOpen
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { datasetsAPI } from '../lib/api';
