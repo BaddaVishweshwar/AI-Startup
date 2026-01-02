@@ -301,8 +301,8 @@ export default function LandingPage() {
                     }
                 >
                     <img
-                        src="/api/placeholder/1400/900"
-                        alt="AI Analytics Dashboard"
+                        src="/artifacts/analytics_conversation_1767379761697.png"
+                        alt="AI Analytics - Ask questions and get instant insights"
                         className="mx-auto rounded-2xl object-cover h-full w-full object-left-top"
                         draggable={false}
                     />
