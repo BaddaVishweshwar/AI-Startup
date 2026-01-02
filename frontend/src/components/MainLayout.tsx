@@ -106,25 +106,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
                     {/* DATASETS Section */}
                     <div className="pt-6">
-                        <div className="px-3 pb-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                        <div className="px-4 pb-2.5 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wide">
                             Datasets
                         </div>
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                             {datasets.map((dataset) => (
                                 <div key={dataset.id} className="group relative">
                                     <Link
                                         to="/datasets"
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all pr-8"
+                                        className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all pr-9"
                                     >
-                                        <Database className="w-4 h-4 shrink-0" />
-                                        <span className="truncate">{dataset.name}</span>
+                                        <Database className="w-5 h-5 shrink-0" />
+                                        <span className="truncate font-medium">{dataset.name}</span>
                                     </Link>
                                     <button
                                         onClick={() => handleDeleteDataset(dataset.id)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white text-muted-foreground"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white text-muted-foreground"
                                         title="Delete dataset"
                                     >
-                                        <span className="text-xs">×</span>
+                                        <span className="text-sm">×</span>
                                     </button>
                                 </div>
                             ))}
@@ -133,20 +133,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </nav>
 
                 {/* Sidebar Footer */}
-                <div className="border-t border-border p-2 space-y-0.5">
+                <div className="border-t border-border p-3 space-y-1">
                     <Link
                         to="/settings"
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                     >
-                        <Settings className="w-4 h-4 shrink-0" />
-                        <span>Settings</span>
+                        <Settings className="w-5 h-5 shrink-0" />
+                        <span className="font-medium">Settings</span>
                     </Link>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                     >
-                        <LogOut className="w-4 h-4 shrink-0" />
-                        <span>Logout</span>
+                        <LogOut className="w-5 h-5 shrink-0" />
+                        <span className="font-medium">Logout</span>
                     </button>
                 </div>
             </div>
