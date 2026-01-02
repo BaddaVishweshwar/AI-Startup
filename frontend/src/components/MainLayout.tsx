@@ -104,33 +104,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             </Link>
                         );
                     })}
-
-                    {/* DATASETS Section */}
-                    <div className="pt-6">
-                        <div className="px-4 pb-2.5 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wide">
-                            Datasets
-                        </div>
-                        <div className="space-y-1">
-                            {datasets.map((dataset) => (
-                                <div key={dataset.id} className="group relative">
-                                    <Link
-                                        to="/datasets"
-                                        className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all pr-9"
-                                    >
-                                        <Database className="w-5 h-5 shrink-0" />
-                                        <span className="truncate font-medium">{dataset.name}</span>
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDeleteDataset(dataset.id)}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white text-muted-foreground"
-                                        title="Delete dataset"
-                                    >
-                                        <span className="text-sm">×</span>
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </nav>
 
                 {/* Sidebar Footer */}

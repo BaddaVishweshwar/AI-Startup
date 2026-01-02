@@ -1,103 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { datasetsAPI } from '../lib/api';
+import { Database, Upload, Plus, Search, Calendar, Table2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { datasetsAPI, connectionsAPI } from '../lib/api';
-import {
-    Upload,
-    Trash2,
-    FileSpreadsheet,
-    BarChart,
-    Clock,
-    FileText,
-    Plus,
-    CheckCircle2,
-    XCircle,
-    Loader2,
-    Search,
-    Database
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '../components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 export default function DatasetPage() {
     const [datasets, setDatasets] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [dbConnections, setDbConnections] = useState<any[]>([]);
-    const [selectedConnId, setSelectedConnId] = useState('');
-    const [dbDatasetName, setDbDatasetName] = useState('');
-
-    const [dbTables, setDbTables] = useState<string[]>([]);
-    const [selectedTable, setSelectedTable] = useState('');
-    const [loadingTables, setLoadingTables] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         loadDatasets();
-        loadConnections();
     }, []);
-
-    useEffect(() => {
-        if (selectedConnId) {
-            loadTables(parseInt(selectedConnId));
-        } else {
-            setDbTables([]);
-            setSelectedTable('');
-        }
-    }, [selectedConnId]);
-
-    const loadConnections = async () => {
-        try {
-            const res = await connectionsAPI.list();
-            setDbConnections(res.data);
-        } catch (e) { console.error(e); }
-    };
-
-    const loadTables = async (connId: number) => {
-        setLoadingTables(true);
-        try {
-            const res = await connectionsAPI.getTables(connId);
-            setDbTables(res.data);
-            if (res.data.length > 0) setSelectedTable(res.data[0]);
-        } catch (e) {
-            console.error('Error loading tables', e);
-            setDbTables([]);
-        } finally {
-            setLoadingTables(false);
-        }
-    };
-
-    const handleDbConnect = async () => {
-        if (!selectedConnId || !selectedTable) {
-            alert("Please select a connection and a table");
-            return;
-        }
-        setUploading(true);
-        try {
-            await datasetsAPI.createFromConnection({
-                name: dbDatasetName || `${selectedTable} (DB)`,
-                connection_id: parseInt(selectedConnId),
-                table_name: selectedTable
-            });
-            await loadDatasets();
-            setDbDatasetName('');
-            setSelectedConnId('');
-            setSelectedTable('');
-            setDbTables([]);
-        } catch (e: any) {
-            alert(e.response?.data?.detail || 'Error linking database');
-        } finally {
-            setUploading(false);
-        }
-    };
 
     const loadDatasets = async () => {
         try {
+            setLoading(true);
             const response = await datasetsAPI.list();
-            if (Array.isArray(response.data)) {
-                setDatasets(response.data);
-            }
+            setDatasets(response.data);
         } catch (error) {
             console.error('Error loading datasets:', error);
         } finally {
@@ -105,314 +27,172 @@ export default function DatasetPage() {
         }
     };
 
-    useEffect(() => {
-        const hasProcessing = datasets.some(d => d.status === 'processing');
-        if (!hasProcessing) return;
-        const interval = setInterval(() => { loadDatasets(); }, 3000);
-        return () => clearInterval(interval);
-    }, [datasets]);
-
-    const onDrop = async (acceptedFiles: File[]) => {
-        if (acceptedFiles.length === 0) return;
-        const file = acceptedFiles[0];
-        setUploading(true);
-        try {
-            await datasetsAPI.upload(file);
-            await loadDatasets();
-        } catch (error: any) {
-            alert(error.response?.data?.detail || 'Error uploading file');
-        } finally {
-            setUploading(false);
+    const handleDeleteDataset = async (datasetId: number) => {
+        if (confirm('Are you sure you want to delete this dataset?')) {
+            try {
+                await datasetsAPI.delete(datasetId);
+                await loadDatasets();
+            } catch (error) {
+                console.error('Error deleting dataset:', error);
+            }
         }
     };
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop,
-        accept: {
-            'text/csv': ['.csv'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-            'application/vnd.ms-excel': ['.xls'],
-        },
-        maxFiles: 1,
-    });
-
-    const handleDelete = async (id: number) => {
-        if (!confirm('Permanently delete this dataset? All associated insights will be lost.')) return;
-        try {
-            await datasetsAPI.delete(id);
-            await loadDatasets();
-        } catch (error: any) {
-            console.error('Delete error:', error);
-        }
-    };
-
-    const filteredDatasets = datasets.filter(d =>
-        d.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredDatasets = datasets.filter(dataset =>
+        dataset.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
-        <div className="space-y-10 animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 className="text-4xl font-bold font-display tracking-tight text-foreground">
-                        Data Source Manager
+        <div className="h-full overflow-y-auto bg-background">
+            <div className="max-w-7xl mx-auto px-6 py-12">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-semibold text-foreground mb-3">
+                        Choose a Dataset
                     </h1>
-                    <p className="text-muted-foreground mt-2">
-                        Import and manage the raw datasets feeding your AI engine.
+                    <p className="text-muted-foreground text-base">
+                        Select from previously uploaded files or connected sources to explore in our AI-enabled platform
                     </p>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Search */}
+                <div className="relative max-w-md mx-auto mb-12">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search datasets..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-12 h-12 bg-muted/50 border-border rounded-xl text-base"
+                    />
+                </div>
 
-                {/* Left: Upload Zone */}
-                <div className="lg:col-span-1">
-                    <Card className="bg-card border border-border shadow-xl overflow-hidden sticky top-8">
-                        <CardHeader className="p-6 border-b border-slate-100 bg-muted/50">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
-                                <Plus className="w-4 h-4 text-foreground" /> Import Source
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
+                {/* Datasets Grid */}
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+                    </div>
+                ) : filteredDatasets.length === 0 ? (
+                    <div className="text-center py-20">
+                        <Database className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-6">
+                            {searchQuery ? 'No datasets found matching your search' : 'No datasets uploaded yet'}
+                        </p>
+                        <Button className="bg-accent hover:bg-accent/90">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload Your First Dataset
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+                        {filteredDatasets.map((dataset) => (
                             <div
-                                {...getRootProps()}
-                                className={`relative group border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 ${isDragActive
-                                    ? 'border-slate-900 bg-muted'
-                                    : 'border-border hover:border-slate-400 hover:bg-muted'
-                                    }`}
+                                key={dataset.id}
+                                className="group relative border border-border rounded-xl p-6 hover:bg-muted/30 transition-all bg-card"
                             >
-                                <input {...getInputProps()} />
-                                <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${uploading ? 'bg-primary/20' : 'bg-slate-100'}`}>
-                                    {uploading ? (
-                                        <Loader2 className="w-8 h-8 text-foreground animate-spin" />
-                                    ) : (
-                                        <Upload className={`w-8 h-8 ${isDragActive ? 'text-foreground' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                                    )}
-                                </div>
-
-                                <div className="space-y-1">
-                                    <p className="text-sm font-bold tracking-tight text-foreground">
-                                        {uploading ? 'Uploading...' : isDragActive ? 'Release to Start' : 'Drag & Drop CSV/Excel'}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-                                        Max size: 100MB
-                                    </p>
-                                </div>
-
-                                {isDragActive && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="absolute inset-0 bg-slate-900/5 backdrop-blur-sm rounded-2xl flex items-center justify-center pointer-events-none"
-                                    >
-                                        <div className="bg-slate-900 text-white p-3 rounded-full shadow-2xl">
-                                            <CheckCircle2 className="w-6 h-6" />
+                                {/* Dataset Icon */}
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                                        <Database className="w-6 h-6 text-accent" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-lg font-semibold text-foreground mb-1 truncate">
+                                            {dataset.name}
+                                        </h3>
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                            <span className="flex items-center gap-1">
+                                                <Table2 className="w-3 h-3" />
+                                                {dataset.row_count?.toLocaleString() || 0} rows
+                                            </span>
+                                            <span>•</span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(dataset.created_at).toLocaleDateString()}
+                                            </span>
                                         </div>
-                                    </motion.div>
-                                )}
-                            </div>
-
-                            <div className="mt-6 space-y-4">
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Clock className="w-3 h-3" /> System Capability
-                                </h4>
-                                <div className="space-y-2">
-                                    {['CSV Processing', 'Excel Multi-sheet', 'Automatic Profiling'].map((feature, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> {feature}
-                                        </div>
-                                    ))}
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Database Connection Card */}
-                    <Card className="bg-card border border-border shadow-xl overflow-hidden mt-6">
-                        <CardHeader className="p-6 border-b border-slate-100 bg-muted/50">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
-                                <Database className="w-4 h-4 text-foreground" /> Connect Database
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-muted-foreground uppercase">Select Source</label>
-                                <select
-                                    className="w-full text-sm p-2 rounded-md border border-border"
-                                    value={selectedConnId}
-                                    onChange={e => setSelectedConnId(e.target.value)}
-                                >
-                                    <option value="">-- Choose Connection --</option>
-                                    {dbConnections.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
-                                    ))}
-                                </select>
-                                {dbConnections.length === 0 && (
-                                    <p className="text-xs text-slate-400">
-                                        No connections found. <Link to="/connections" className="text-primary hover:underline">Manage Connections</Link>
-                                    </p>
-                                )}
-                            </div>
-
-                            {selectedConnId && (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase">Select Table</label>
-                                    {loadingTables ? (
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Loader2 className="w-3 h-3 animate-spin" /> Fetching tables...
-                                        </div>
-                                    ) : (
-                                        <select
-                                            className="w-full text-sm p-2 rounded-md border border-border"
-                                            value={selectedTable}
-                                            onChange={e => setSelectedTable(e.target.value)}
-                                        >
-                                            <option value="">-- Choose Table --</option>
-                                            {dbTables.map(t => (
-                                                <option key={t} value={t}>{t}</option>
-                                            ))}
-                                        </select>
-                                    )}
-                                </div>
-                            )}
-
-                            {selectedConnId && (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-muted-foreground uppercase">Dataset Name</label>
-                                    <input
-                                        className="w-full text-sm p-2 rounded-md border border-border"
-                                        placeholder="e.g. Sales DB"
-                                        value={dbDatasetName}
-                                        onChange={e => setDbDatasetName(e.target.value)}
-                                    />
+                                {/* Actions */}
+                                <div className="flex items-center gap-2">
                                     <Button
-                                        className="w-full mt-2"
-                                        onClick={handleDbConnect}
-                                        disabled={uploading}
+                                        variant="default"
+                                        size="sm"
+                                        className="flex-1 bg-accent hover:bg-accent/90"
+                                        onClick={() => navigate(`/data-view?dataset=${dataset.id}`)}
                                     >
-                                        {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Link Database'}
+                                        Load
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 border-border"
+                                        onClick={() => {
+                                            // Navigate to analytics or manage view
+                                            navigate(`/analytics`);
+                                        }}
+                                    >
+                                        Manage
                                     </Button>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
 
-                {/* Right: Dataset List */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Search by filename..."
-                                className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all text-foreground placeholder:text-slate-400"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                                {/* Delete button on hover */}
+                                <button
+                                    onClick={() => handleDeleteDataset(dataset.id)}
+                                    className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-muted opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-white"
+                                    title="Delete dataset"
+                                >
+                                    <span className="text-sm">×</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Upload Section */}
+                <div className="border-t border-border pt-12">
+                    <div className="flex flex-col items-center gap-4">
+                        <Button
+                            size="lg"
+                            className="bg-accent hover:bg-accent/90 px-8 h-12 text-base"
+                            onClick={() => {
+                                // Trigger file upload
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.csv,.xlsx,.xls';
+                                input.onchange = async (e: any) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        try {
+                                            await datasetsAPI.upload(formData);
+                                            await loadDatasets();
+                                        } catch (error) {
+                                            console.error('Upload error:', error);
+                                        }
+                                    }
+                                };
+                                input.click();
+                            }}
+                        >
+                            <Upload className="w-5 h-5 mr-2" />
+                            Upload Dataset
+                        </Button>
+
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                Connect Database
+                            </button>
+                            <span>•</span>
+                            <button className="hover:text-accent transition-colors flex items-center gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                Connect Cloud Storage
+                            </button>
                         </div>
                     </div>
-
-                    <div className="space-y-4">
-                        {loading ? (
-                            <div className="py-20 flex flex-col items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Synchronizing Files...</span>
-                            </div>
-                        ) : filteredDatasets.length === 0 ? (
-                            <Card className="bg-card border-dashed border-2 border-border text-center py-20 shadow-sm">
-                                <FileSpreadsheet className="w-16 h-16 mx-auto mb-4 opacity-20 text-foreground" />
-                                <h3 className="text-lg font-bold mb-1 text-foreground">No datasets detected</h3>
-                                <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-6">
-                                    Connect your first data source to begin your analytical journey.
-                                </p>
-                            </Card>
-                        ) : (
-                            <AnimatePresence>
-                                {filteredDatasets.map((dataset, idx) => (
-                                    <motion.div
-                                        key={dataset.id}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                    >
-                                        <Card className="bg-card border border-border hover:border-slate-300 hover:shadow-md transition-all duration-300 group overflow-hidden">
-                                            <CardContent className="p-0">
-                                                <div className="flex items-center">
-                                                    {/* Preview Icon Column */}
-                                                    <div className="w-20 h-24 bg-muted flex flex-col items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors border-r border-slate-100">
-                                                        <FileText className="w-8 h-8 text-slate-400 group-hover:text-foreground transition-all duration-300" />
-                                                        <span className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">
-                                                            {dataset.name.split('.').pop()}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Info Column */}
-                                                    <div className="flex-1 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4">
-                                                        <div className="space-y-1">
-                                                            <h4 className="font-bold text-lg tracking-tight truncate max-w-[200px] sm:max-w-[300px] text-foreground">
-                                                                {dataset.name}
-                                                            </h4>
-                                                            <div className="flex items-center gap-4">
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                                    <BarChart className="w-3 h-3" /> {(dataset.row_count || 0).toLocaleString()} ROWS
-                                                                </span>
-                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                                    <Clock className="w-3 h-3" /> {new Date(dataset.created_at).toLocaleDateString()}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Status & Actions */}
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="hidden sm:block">
-                                                                {dataset.status === 'processing' ? (
-                                                                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
-                                                                        <Loader2 className="w-3 h-3 text-yellow-600 animate-spin" />
-                                                                        <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Profiling</span>
-                                                                    </div>
-                                                                ) : dataset.status === 'error' ? (
-                                                                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-full border border-red-200">
-                                                                        <XCircle className="w-3 h-3 text-red-500" />
-                                                                        <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Failed</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                                                                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Active</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2">
-                                                                <Link to="/analytics" state={{ datasetId: dataset.id }}>
-                                                                    <Button variant="outline" size="sm" className="h-9 border-border text-slate-600 hover:bg-slate-900 hover:border-slate-900 hover:text-white transition-all font-bold text-xs uppercase tracking-widest">
-                                                                        Analyze
-                                                                    </Button>
-                                                                </Link>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50"
-                                                                    onClick={() => handleDelete(dataset.id)}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        )}
-                    </div>
                 </div>
-
             </div>
         </div>
     );
