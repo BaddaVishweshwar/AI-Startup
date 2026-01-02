@@ -18,6 +18,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import SettingsPage from './pages/SettingsPage'
 import SavedInsightsPage from './pages/SavedInsightsPage'
 import DataViewPage from './pages/DataViewPage'
+import ActiveDatasetsPage from './pages/ActiveDatasetsPage'
 import HistoryPage from './pages/HistoryPage'
 
 const queryClient = new QueryClient({
@@ -50,6 +51,7 @@ function App() {
                         <Route path="/history" element={<ProtectedRoute><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/saved" element={<ProtectedRoute><MainLayout><SavedInsightsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/data-view" element={<ProtectedRoute><MainLayout><DataViewPage /></MainLayout></ProtectedRoute>} />
+                        <Route path="/active-datasets" element={<ProtectedRoute><MainLayout><ActiveDatasetsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/settings" element={<ProtectedRoute><MainLayout><SettingsPage /></MainLayout></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
 

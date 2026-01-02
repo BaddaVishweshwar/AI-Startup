@@ -219,13 +219,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             variant="ghost"
                             size="sm"
                             className="p-1.5 h-auto"
-                            onClick={() => {
-                                if (selectedDataset) {
-                                    navigate(`/data-view?dataset=${selectedDataset}`);
-                                } else if (datasets.length > 0) {
-                                    navigate(`/data-view?dataset=${datasets[0].id}`);
-                                }
-                            }}
+                            onClick={() => navigate('/active-datasets')}
                         >
                             <Grid3x3 className="w-4 h-4 text-muted-foreground" />
                         </Button>
