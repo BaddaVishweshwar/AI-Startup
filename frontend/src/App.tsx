@@ -13,6 +13,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import ProtectedRoute from './components/ProtectedRoute'
 import GetStartedPage from './pages/GetStartedPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import HistoryPage from './pages/HistoryPage'
 
 const queryClient = new QueryClient({
@@ -33,6 +35,8 @@ function App() {
                         {/* Public Routes */}
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                        <Route path="/reset-password" element={<ResetPasswordPage />} />
                         <Route path="/get-started" element={<GetStartedPage />} />
 
                         {/* Protected Routes (Wrapped in MainLayout and ProtectedRoute) */}
