@@ -260,9 +260,11 @@ function MessageBubble({ message }: { message: Message }) {
                 <div className="flex-1 space-y-4">
                     {content.directAnswer && (
                         <div className="prose prose-invert max-w-none">
-                            <ReactMarkdown className="text-foreground text-base leading-relaxed">
-                                {content.directAnswer}
-                            </ReactMarkdown>
+                            <div className="text-foreground text-base leading-relaxed">
+                                <ReactMarkdown>
+                                    {content.directAnswer}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     )}
 
