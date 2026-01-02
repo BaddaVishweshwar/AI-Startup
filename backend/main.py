@@ -54,10 +54,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    from app.services.gemini_service import gemini_service
+    from app.services.ollama_service import ollama_service
     
     try:
-        ai_available = gemini_service.check_availability()
+        ai_available = ollama_service.check_availability()
     except Exception as e:
         ai_available = False
         print(f"AI service error: {e}")
@@ -65,5 +65,6 @@ async def health_check():
     return {
         "status": "healthy",
         "ai_available": ai_available,
-        "model": settings.GEMINI_MODEL
+        "model": ollama_service.model_name,
+        "provider": ollama_service.provider
     }

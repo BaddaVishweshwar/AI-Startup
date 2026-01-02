@@ -5,6 +5,7 @@ import re
 import logging
 from ..config import settings
 from . import AnalysisPlan, AnalysisPlanStep, QueryRequirements, SchemaAnalysis, IntentResult
+from ..utils.json_extractor import extract_json_from_llm_response
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +123,7 @@ Respond with ONLY the JSON."""
                 )
                 
                 # Parse output
-                result_data = self._parse_response(response['response'])
+                result_data = extract_json_from_llm_response(response['response'])
                 
                 # Extract and Validate SQL
                 sql_query = result_data.get("sql_query", "")
@@ -267,7 +268,13 @@ Respond with ONLY the JSON."""
     def _fallback_plan(self, query: str, requirements: QueryRequirements, schema_analysis: SchemaAnalysis) -> AnalysisPlan:
         # Simple SELECT * LIMIT 10
         return AnalysisPlan(
-            steps=[AnalysisPlanStep(1, "select", "Fallback query", [], "Basic data")],
+            steps=[AnalysisPlanStep(
+                step_number=1, 
+                operation="select", 
+                description="Fallback query", 
+                columns_involved=[], 
+                expected_output="Basic data"
+            )],
             sql_query="SELECT * FROM data LIMIT 10",
             python_code=None,
             expected_columns=list(schema_analysis.columns.keys())[:5],

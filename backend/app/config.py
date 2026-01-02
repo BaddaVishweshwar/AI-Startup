@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-1.5-flash-001"
     GOOGLE_CLIENT_ID: Optional[str] = None
     
+    # OpenAI
+    OPENAI_API_KEY: Optional[str] = None
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_API_BASE: Optional[str] = "https://models.inference.ai.azure.com" # Default to GitHub Models for hex keys, or can be overridden
+    
+    
     # Email Configuration
     GMAIL_USER: Optional[str] = None
     GMAIL_APP_PASSWORD: Optional[str] = None

@@ -177,7 +177,7 @@ class ExplorationAgent:
     
     def _extract_json(self, text: str) -> Dict[str, Any]:
         """Extract JSON from LLM response using robust utility"""
-        from ...utils.json_extractor import extract_json_from_llm_response
+        from ..utils.json_extractor import extract_json_from_llm_response
         
         fallback = {
             "sql": "SELECT COUNT(*) FROM data",

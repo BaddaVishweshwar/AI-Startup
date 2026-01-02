@@ -3,13 +3,95 @@ from typing import Dict, Any, Optional
 import json
 import re
 from ..config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class OllamaService:
-    """Service for interacting with local Ollama LLM"""
+    """
+    Hybrid LLM Service.
+    Supports local Ollama models AND external OpenAI-compatible providers (GPT-4o, GitHub Models).
+    """
     
     def __init__(self):
-        self.client = ollama.Client(host=settings.OLLAMA_HOST)
+        self.provider = "ollama"
+        self.client = None
         self.model_name = settings.OLLAMA_MODEL
+        
+        # Check for OpenAI/GitHub Models configuration
+        if settings.OPENAI_API_KEY:
+            try:
+                from openai import OpenAI
+                self.provider = "openai"
+                self.model_name = settings.OPENAI_MODEL
+                
+                # Configure client (support custom base URL for GitHub Models)
+                client_args = {"api_key": settings.OPENAI_API_KEY}
+                if settings.OPENAI_API_BASE:
+                    client_args["base_url"] = settings.OPENAI_API_BASE
+                    
+                self.client = OpenAI(**client_args)
+                logger.info(f"🚀 Using OpenAI Provider: {self.model_name}")
+            except ImportError:
+                logger.error("❌ openai package not installed. Falling back to Ollama.")
+                self.provider = "ollama"
+        
+        # Fallback to Ollama
+        if self.provider == "ollama":
+            self.client = ollama.Client(host=settings.OLLAMA_HOST)
+            logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
+
+    def check_availability(self) -> bool:
+        """Check if LLM service is configured and available"""
+        if self.provider == "openai":
+            return bool(settings.OPENAI_API_KEY)
+        else:
+            # For Ollama, we could check connectivity, but for now just config
+            return True
+
+    def generate_response(self, prompt: str, system_prompt: str = None, json_mode: bool = False, temperature: float = 0.7) -> str:
+        """Unified generation method"""
+        
+        if self.provider == "openai":
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            
+            response_format = {"type": "json_object"} if json_mode else None
+            
+            try:
+                completion = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=messages,
+                    temperature=temperature,
+                    response_format=response_format
+                )
+                return completion.choices[0].message.content
+            except Exception as e:
+                logger.error(f"OpenAI Generation Error: {e}")
+                raise e
+
+        else:
+            # Ollama Implementation
+            options = {"temperature": temperature}
+            if json_mode:
+                options["format"] = "json"
+                
+            full_prompt = prompt
+            if system_prompt:
+                full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
+            
+            response = self.client.generate(
+                model=self.model_name,
+                prompt=full_prompt,
+                options=options
+            )
+            return response['response']
+
+    # ------------------------------------------------------------------
+    # Legacy Methods (Refactored to use generic generate_response)
+    # ------------------------------------------------------------------
 
     def generate_analysis_plan(
         self, 
@@ -18,7 +100,7 @@ class OllamaService:
         sample_data: list,
         related_expertise: list = []
     ) -> Dict[str, Any]:
-        """Generate a professional analysis plan using Ollama"""
+        """Generate a professional analysis plan"""
         
         schema_desc = self._format_schema(schema)
         sample_desc = self._format_sample_data(sample_data)
@@ -29,7 +111,8 @@ class OllamaService:
             for exp in related_expertise:
                 expertise_desc += f"User: {exp['query']}\nSQL:\n```sql\n{exp['sql']}\n```\n"
         
-        prompt = f"""You are a Senior Data Analyst. Answer the user's question with professional-grade analysis.
+        system_prompt = "You are a Senior Data Analyst. Answer the user's question with professional-grade analysis."
+        prompt = f"""
 1. INTENT: Decision between chart/viz OR data records.
 2. SQL: Write DuckDB SQL for 'data' table. Limit 500.
 3. CLEANING: Python code for pandas 'df'.
@@ -60,13 +143,8 @@ PYTHON:
 ```
 """
         try:
-            response = self.client.generate(
-                model=self.model_name,
-                prompt=prompt,
-                options={"temperature": 0.1, "num_predict": 8192}
-            )
+            full_text = self.generate_response(prompt, system_prompt=system_prompt, temperature=0.1)
             
-            full_text = response['response']
             sql_query = self._extract_sql(full_text)
             python_code = self._extract_python(full_text)
             
@@ -84,12 +162,12 @@ PYTHON:
         schema: Dict[str, Any],
         sample_data: list
     ) -> Dict[str, Any]:
-        """Generate a comprehensive EDA report using Ollama"""
+        """Generate a comprehensive EDA report"""
         schema_desc = self._format_schema(schema)
         sample_desc = self._format_sample_data(sample_data)
         
-        prompt = f"""You are a Lead Data Scientist. Perform a comprehensive Exploratory Data Analysis (EDA) on this dataset.
-        
+        system_prompt = "You are a Lead Data Scientist. Perform a comprehensive Exploratory Data Analysis (EDA)."
+        prompt = f"""
 Dataset Schema:
 {schema_desc}
 
@@ -114,13 +192,8 @@ PYTHON:
 ```
 """
         try:
-            response = self.client.generate(
-                model=self.model_name,
-                prompt=prompt,
-                options={"temperature": 0.2, "num_predict": 8192}
-            )
+            full_text = self.generate_response(prompt, system_prompt=system_prompt, temperature=0.2)
             
-            full_text = response['response']
             report = full_text.split("PYTHON:")[0].replace("REPORT:", "").strip()
             python_code = self._extract_python(full_text)
             
@@ -141,10 +214,11 @@ PYTHON:
     ) -> str:
         """Generate high-level business insights"""
         
-        limited_data = result_data[:5] # Keep it smaller for Ollama context
+        limited_data = result_data[:10] # Larger context allowed for GPT
         
+        system_prompt = "You are a Management Consultant."
         prompt = f"""
-You are a Management Consultant. Provide a sharp, executive summary of this data.
+Provide a sharp, executive summary of this data.
 
 **CONTEXT**
 User Question: "{query}"
@@ -172,14 +246,32 @@ Format Structure:
 - **<step>**: <reason>
 """
         try:
-             response = self.client.generate(
-                model=self.model_name,
-                prompt=prompt,
-                options={"temperature": 0.3, "num_predict": 4096}
-            )
-             return response['response']
+             return self.generate_response(prompt, system_prompt=system_prompt, temperature=0.3)
         except Exception as e:
             return "Insights unavailable."
+
+    # ------------------------------------------------------------------
+    # Compatibility Layer for Agents
+    # Agents call client.generate(model=..., prompt=..., options=...) directly
+    # We must patch this if using OpenAI
+    # ------------------------------------------------------------------
+    
+    def generate(self, model: str, prompt: str, options: dict = None) -> Dict[str, str]:
+        """
+        Compatibility method to mimic ollama.generate signature.
+        Used by the new agent system (SchemaAnalyzer, QueryPlanner, etc.)
+        """
+        temp = options.get("temperature", 0.7) if options else 0.7
+        
+        # Check if json mode is requested via options or prompt
+        json_mode = False
+        if options and options.get("format") == "json":
+            json_mode = True
+        
+        response_text = self.generate_response(prompt, temperature=temp, json_mode=json_mode)
+        
+        # Return in Ollama format: {'response': '...'}
+        return {'response': response_text}
 
     def _extract_section(self, text: str, section_name: str) -> str:
         """Extract a named section (e.g., 'STRATEGY:') from text"""

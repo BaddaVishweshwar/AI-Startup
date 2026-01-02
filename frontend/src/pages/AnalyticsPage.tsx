@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Send, Sparkles, ChevronDown, ChevronRight, BarChart3, Table2, MapPin, FileText, Plus } from 'lucide-react';
 import { datasetsAPI } from '../lib/api';
 import { conversationsAPI } from '../lib/conversationsAPI';
@@ -15,6 +16,9 @@ interface Message {
 export default function AnalyticsPage() {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [selectedDataset, setSelectedDataset] = useState<number | null>(null);
+    const location = useLocation();
+
+    // Restore missing state variables
     const [query, setQuery] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
@@ -22,11 +26,21 @@ export default function AnalyticsPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        // Sync with URL param
+        const params = new URLSearchParams(location.search);
+        const datasetId = params.get('dataset');
+        if (datasetId) {
+            setSelectedDataset(Number(datasetId));
+        }
+    }, [location.search]);
+
+    useEffect(() => {
         loadDatasets();
     }, []);
 
+    // Restore missing useEffects
     useEffect(() => {
-        if (selectedDataset && !currentConversation) {
+        if (selectedDataset) {
             createConversation();
         }
     }, [selectedDataset]);
@@ -39,7 +53,10 @@ export default function AnalyticsPage() {
         try {
             const response = await datasetsAPI.list();
             setDatasets(response.data);
-            if (response.data.length > 0 && !selectedDataset) {
+
+            // Only default if no URL param
+            const params = new URLSearchParams(location.search);
+            if (response.data.length > 0 && !selectedDataset && !params.get('dataset')) {
                 setSelectedDataset(response.data[0].id);
             }
         } catch (error) {
@@ -123,6 +140,7 @@ export default function AnalyticsPage() {
                         {messages.length === 0 ? (
                             <EmptyState
                                 datasets={datasets}
+                                selectedDataset={selectedDataset}
                                 onSelectPrompt={handlePromptClick}
                                 suggestionChips={suggestionChips}
                             />
@@ -175,7 +193,7 @@ export default function AnalyticsPage() {
 }
 
 // Empty State Component
-function EmptyState({ datasets, onSelectPrompt, suggestionChips }: any) {
+function EmptyState({ datasets, selectedDataset, onSelectPrompt, suggestionChips }: any) {
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -187,7 +205,7 @@ function EmptyState({ datasets, onSelectPrompt, suggestionChips }: any) {
                     Ask your data anything
                 </h1>
                 <p className="text-muted-foreground text-base mb-2">
-                    You're analyzing {datasets.length} dataset{datasets.length !== 1 ? 's' : ''}.
+                    {selectedDataset ? 'You are analyzing the selected dataset.' : `You have ${datasets.length} available dataset${datasets.length !== 1 ? 's' : ''}.`}
                 </p>
                 <p className="text-muted-foreground text-sm">
                     Ask questions across them or focus on one:

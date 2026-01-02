@@ -121,7 +121,7 @@ Warnings: {', '.join(interpretation.warnings) if interpretation.warnings else 'N
             # Parse JSON response with robust extractor
             result_text = response['response'].strip()
             
-            from ...utils.json_extractor import extract_json_from_llm_response
+            from ..utils.json_extractor import extract_json_from_llm_response
             fallback = {
                 "direct_answer": "Analysis complete.",
                 "what_data_shows": [],
