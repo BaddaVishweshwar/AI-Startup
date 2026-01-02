@@ -82,7 +82,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return (
         <div className="flex h-screen bg-background overflow-hidden">
             {/* Left Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-0' : 'w-48'} transition-all duration-300 border-r border-border bg-background flex flex-col overflow-hidden`}>
+            <div className={`${sidebarCollapsed ? 'w-0' : 'w-60'} transition-all duration-300 border-r border-border bg-background flex flex-col overflow-hidden`}>
                 {/* Navigation */}
                 <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
                     {navItems.map((item) => {
