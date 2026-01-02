@@ -84,7 +84,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {/* Left Sidebar */}
             <div className={`${sidebarCollapsed ? 'w-0' : 'w-60'} transition-all duration-300 border-r border-border bg-background flex flex-col overflow-hidden`}>
                 {/* Navigation */}
-                <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+                <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
@@ -93,13 +93,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center gap-2.5 px-3 py-2 rounded-md transition-all text-sm ${isActive
+                                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${isActive
                                     ? 'bg-muted text-foreground'
                                     : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                     }`}
                             >
-                                <Icon className="w-4 h-4 shrink-0" />
-                                <span>{item.name}</span>
+                                <Icon className="w-5 h-5 shrink-0" />
+                                <span className="text-sm font-medium">{item.name}</span>
                             </Link>
                         );
                     })}
