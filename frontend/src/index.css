@@ -2,22 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Emerald/Teal/Purple Theme */
+/* Dark Mode - CamelAI Style with Emerald/Teal/Purple Accents */
 #root {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdfa 0%, #faf5ff 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #18181b 100%);
   background-attachment: fixed;
 }
 
 @layer base {
   :root {
-    /* Modern Emerald/Teal/Purple Color System */
-    --background: 180 100% 99%;
-    --foreground: 215 25% 12%;
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 12%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 12%;
+    /* Dark Mode - CamelAI Style with Emerald/Teal/Purple */
+    --background: 222 47% 11%;
+    /* Dark slate */
+    --foreground: 210 40% 98%;
+    /* Light text */
+    --card: 217 33% 17%;
+    /* Dark card */
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
     --primary: 160 84% 39%;
     /* Emerald-600 */
     --primary-foreground: 0 0% 100%;
@@ -25,39 +28,41 @@
     /* Teal-500 */
     --secondary-foreground: 0 0% 100%;
     --accent: 270 91% 65%;
-    /* Purple-500 */
+    /* Purple-400 */
     --accent-foreground: 0 0% 100%;
-    --muted: 174 44% 96%;
-    /* Teal-50 */
-    --muted-foreground: 215 16% 47%;
+    --muted: 217 33% 17%;
+    /* Dark muted */
+    --muted-foreground: 215 20% 65%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 174 24% 88%;
-    --input: 174 24% 88%;
+    --border: 217 33% 23%;
+    /* Subtle border */
+    --input: 217 33% 23%;
     --ring: 160 84% 39%;
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Same as root for consistency */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 174 84% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 270 91% 65%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 23%;
+    --input: 217 33% 23%;
+    --ring: 160 84% 39%;
   }
 }
 
@@ -68,15 +73,15 @@
     scroll-behavior: smooth;
   }
 
-  /* Animated Gradient Background */
+  /* Animated Gradient Background - Dark Mode */
   .animated-gradient {
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background: linear-gradient(-45deg, #10b981, #14b8a6, #a855f7, #06b6d4);
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }
 
   .animated-gradient-subtle {
-    background: linear-gradient(-45deg, #f8fafc, #e0e7ff, #dbeafe, #f0f9ff);
+    background: linear-gradient(-45deg, #1e293b, #312e81, #27272a, #1e3a8a);
     background-size: 400% 400%;
     animation: gradient 20s ease infinite;
   }
@@ -95,34 +100,35 @@
     }
   }
 
-  /* Gradient Text */
+  /* Gradient Text - Emerald to Purple */
   .gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #10b981 0%, #a855f7 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .gradient-text-vibrant {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #14b8a6 0%, #c026d3 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  /* Glassmorphism */
+  /* Glassmorphism - Dark Mode */
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
   .glass-dark {
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.2);
   }
 
   /* Floating Animation */
@@ -142,7 +148,7 @@
     }
   }
 
-  /* Pulse Glow */
+  /* Pulse Glow - Emerald */
   .pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
@@ -151,11 +157,11 @@
 
     0%,
     100% {
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
     }
 
     50% {
-      box-shadow: 0 0 40px rgba(99, 102, 241, 0.8);
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.8), 0 0 60px rgba(168, 85, 247, 0.3);
     }
   }
 
@@ -174,7 +180,7 @@
     height: 100%;
     background: linear-gradient(90deg,
         transparent,
-        rgba(255, 255, 255, 0.3),
+        rgba(16, 185, 129, 0.2),
         transparent);
     animation: shimmer 3s infinite;
   }
@@ -227,22 +233,22 @@
     }
   }
 
-  /* Custom Scrollbar */
+  /* Custom Scrollbar - Dark Mode */
   ::-webkit-scrollbar {
     width: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: #1e293b;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #334155;
     border-radius: 5px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: #475569;
   }
 }
 
