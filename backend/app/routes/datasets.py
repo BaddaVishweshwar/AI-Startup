@@ -242,6 +242,49 @@ async def get_dataset(
     return dataset
 
 
+@router.get("/{dataset_id}/data")
+async def get_dataset_data(
+    dataset_id: int,
+    limit: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get full dataset data"""
+    dataset = db.query(Dataset).filter(
+        Dataset.id == dataset_id,
+        Dataset.user_id == current_user.id
+    ).first()
+    
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    try:
+        # Load full data from file
+        df = data_service.parse_file(dataset.file_path, dataset.file_type)
+        
+        # Apply limit if specified
+        if limit:
+            df = df.head(limit)
+        
+        # Convert to list of dicts
+        data = df.to_dict('records')
+        columns = df.columns.tolist()
+        
+        return {
+            "data": data,
+            "columns": columns,
+            "total_rows": len(df),
+            "dataset_info": {
+                "id": dataset.id,
+                "name": dataset.name,
+                "row_count": dataset.row_count,
+                "column_count": dataset.column_count
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading data: {str(e)}")
+
+
 @router.delete("/{dataset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_dataset(
     dataset_id: int,
