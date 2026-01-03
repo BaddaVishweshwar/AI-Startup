@@ -38,6 +38,31 @@ VALIDATION CHECKS:
 6. ✓ Is table name "data" (not ActualData, sales_data, etc.)?
 7. ✓ Are column names with special characters quoted?
 8. ✓ Are there any logic errors?
+9. ✓ Are ALL requested columns included? (check question for "and", "with", etc.)
+10. ✓ Is window function usage optimal? (avoid OVER() when simple aggregation works)
+
+LOGICAL OPTIMALITY CHECKS:
+- If question asks for "TV, Radio, AND Newspaper" → SQL must include ALL three
+- If simple SUM/AVG works → don't use window functions (SUM() OVER())
+- If ranking needed → use ROW_NUMBER() or RANK()
+- If comparing multiple items → ensure all are in SELECT clause
+
+EXAMPLES OF ISSUES:
+
+Bad: SELECT * FROM ActualData
+Fix: SELECT * FROM data
+
+Bad: SELECT "Sales" FROM data (missing aggregation for "total sales")
+Fix: SELECT SUM("Sales ($)") as total_sales FROM data
+
+Bad: SELECT product, revenue FROM data GROUP BY product (revenue not aggregated)
+Fix: SELECT product, SUM(revenue) as total_revenue FROM data GROUP BY product
+
+Bad: SELECT SUM("TV Budget") OVER() as total_tv FROM data (unnecessary window function)
+Fix: SELECT SUM("TV Budget") as total_tv FROM data
+
+Bad: SELECT "TV Budget", "Radio Budget" FROM data (question asked for TV, Radio, AND Newspaper)
+Fix: SELECT "TV Budget", "Radio Budget", "Newspaper Budget" FROM data
 
 EXAMPLES OF ISSUES:
 
@@ -150,7 +175,7 @@ class SQLValidatorService:
         lines = ["Table: data"]
         lines.append("\nColumns:")
         
-        for col in schema.get('columns', [])[:15]:  # Limit to 15 columns
+        for col in schema.get('columns', []):  # Show ALL columns (no limit)
             col_name = col.get('name', 'unknown')
             col_type = col.get('type', 'unknown')
             lines.append(f'  - "{col_name}" ({col_type})')

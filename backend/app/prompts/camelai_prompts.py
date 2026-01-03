@@ -83,13 +83,16 @@ CURRENT QUESTION: "{user_question}"
 **3. ALWAYS use: FROM data (not FROM ActualData, FROM sales, etc.)**
 **4. ALWAYS quote column names with special characters: "Column Name"**
 **5. Example: SELECT "TV Ad Budget ($)" FROM data**
+**6. If question mentions multiple items with "and", "with", "plus" → include ALL**
+**7. "TV, Radio, and Newspaper" means SELECT all three columns**
 **━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━**
 
 STEP-BY-STEP REASONING:
-1. Identify what columns are needed
+1. Identify what columns are needed (check for "and", "with", "plus")
 2. Determine if aggregation is required
 3. Check if filtering is needed
 4. Decide on sorting/limiting
+5. VERIFY all mentioned columns are included
 
 EXAMPLES:
 Question: "What are top 5 products by revenue?"
