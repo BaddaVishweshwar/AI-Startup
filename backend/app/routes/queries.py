@@ -13,6 +13,7 @@ from ..services.analytics_service_v3 import analytics_service_v3  # NEW: Enhance
 from ..services.data_service import data_service
 from ..services.visualization_service import visualization_service
 from ..services.knowledge_service import knowledge_service
+from ..services.conversation_manager import conversation_manager
 
 router = APIRouter(prefix="/queries", tags=["Queries"])
 
@@ -185,31 +186,29 @@ async def ask_question(
         else:
             df = data_service.parse_file(dataset.file_path, dataset.file_type)
         
-        # Prepare conversation context for multi-turn understanding
-        context = {}
+        # Get conversation context (last 3 exchanges)
+        context = None
         if query_request.session_id:
-            # Fetch recent history for this session
-            history_queries = db.query(Query).filter(
-                Query.session_id == query_request.session_id,
-                Query.user_id == current_user.id,
-                Query.status == 'success'
-            ).order_by(Query.created_at.desc()).limit(5).all()
+            # Get formatted context for prompts
+            context_str = conversation_manager.get_context(
+                session_id=query_request.session_id,
+                last_n=3
+            )
             
-            # Convert to chronological order
-            history_queries.reverse()
+            # Get raw history for structured context
+            history = conversation_manager.get_history(
+                session_id=query_request.session_id,
+                last_n=3
+            )
             
-            messages = []
-            for hq in history_queries:
-                messages.append({"role": "user", "content": hq.natural_language_query})
-                # Use insights as assistant response (or failing that, SQL summary)
-                assistant_content = hq.insights if hq.insights else f"Executed SQL: {hq.generated_sql}"
-                messages.append({"role": "assistant", "content": assistant_content})
-                
             context = {
-                "history": messages,
-                "dataset_id": dataset.id
+                "history": history,
+                "dataset_id": dataset.id,
+                "formatted_context": context_str
             }
             
+            logger.info(f"Using conversation context with {len(history)} previous exchanges")
+        
         # Execute enhanced multi-agent analytics pipeline (V3 - CamelAI-grade)
         analysis_response = await analytics_service_v3.analyze(
             query=query_request.query,
