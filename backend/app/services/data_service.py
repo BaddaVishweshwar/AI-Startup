@@ -68,6 +68,37 @@ class DataService:
         return json.loads(sample.to_json(orient='records'))
     
     @staticmethod
+    def sanitize_sql_for_special_columns(sql_query: str, df: pd.DataFrame) -> str:
+        """
+        Sanitize SQL by quoting column names that contain special characters.
+        This fixes queries where the LLM didn't properly quote column names.
+        """
+        if df is None:
+            return sql_query
+        
+        # Get all column names from the dataframe
+        columns = df.columns.tolist()
+        
+        # Find columns that need quoting (contain spaces, parentheses, or special chars)
+        columns_needing_quotes = []
+        for col in columns:
+            if any(char in col for char in [' ', '(', ')', '$', '%', '-', '+']):
+                columns_needing_quotes.append(col)
+        
+        # Replace unquoted column references with quoted ones
+        sanitized_sql = sql_query
+        for col in columns_needing_quotes:
+            # Replace patterns like: SELECT column_name or column_name, or column_name FROM
+            # But not if already quoted
+            import re
+            # Match the column name when it's not already in quotes
+            pattern = r'(?<!")' + re.escape(col) + r'(?!")'
+            replacement = f'"{col}"'
+            sanitized_sql = re.sub(pattern, replacement, sanitized_sql)
+        
+        return sanitized_sql
+    
+    @staticmethod
     def execute_sql_query(
         sql_query: str, 
         df: Optional[pd.DataFrame] = None, 
@@ -81,12 +112,15 @@ class DataService:
                 return connection_service.execute_query(connection, sql_query)
             
             if df is not None:
+                # Sanitize SQL to handle special column names
+                sanitized_sql = DataService.sanitize_sql_for_special_columns(sql_query, df)
+                
                 # Use DuckDB for local DataFrame queries
                 con = duckdb.connect(database=':memory:')
                 # Explicitly register the dataframe as a table named 'data'
                 con.register('data', df)
                 
-                result = con.execute(sql_query).df()
+                result = con.execute(sanitized_sql).df()
                 con.close()
                 return {
                     "success": True,

@@ -9,6 +9,7 @@ from ..models import User, Dataset, Query
 from ..routes.auth import get_current_user
 from ..services.ai_service import ai_service
 from ..services.analytics_service_v2 import analytics_service_v2
+from ..services.analytics_service_v3 import analytics_service_v3  # NEW: Enhanced multi-agent pipeline
 from ..services.data_service import data_service
 from ..services.visualization_service import visualization_service
 from ..services.knowledge_service import knowledge_service
@@ -148,7 +149,7 @@ async def ask_question(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Ask a natural language question about a dataset using multi-agent pipeline"""
+    """Ask a natural language question about a dataset using enhanced multi-agent pipeline (V3)"""
     
     start_time = time.time()
     
@@ -209,8 +210,8 @@ async def ask_question(
                 "dataset_id": dataset.id
             }
             
-        # Execute multi-agent analytics pipeline
-        analysis_response = analytics_service_v2.analyze(
+        # Execute enhanced multi-agent analytics pipeline (V3 - CamelAI-grade)
+        analysis_response = await analytics_service_v3.analyze(
             query=query_request.query,
             dataset=dataset,
             df=df,
@@ -218,82 +219,98 @@ async def ask_question(
             context=context
         )
         
-        # Check if analysis succeeded
-        if not analysis_response.execution_result.success:
+        # Check if analysis succeeded (V3 format)
+        if not analysis_response.get('success', False):
             query.status = "error"
-            query.error_message = analysis_response.execution_result.error
-            query.intent = analysis_response.intent.intent.value
-            query.reasoning_steps = analysis_response.reasoning_steps
+            error_details = analysis_response.get('error', {})
+            query.error_message = error_details.get('details', 'Analysis failed')
             db.commit()
             db.refresh(query)
             return query
         
-        # Generate Python visualization if needed
-        python_viz = {"success": False, "image": None}
-        if analysis_response.analysis_plan.python_code:
-            python_viz = visualization_service.generate_custom_chart(
-                data=analysis_response.execution_result.data,
-                python_code=analysis_response.analysis_plan.python_code,
-                title=query_request.query
-            )
+        # Extract results from V3 response
+        sql_query_info = analysis_response.get('sql_query', {})
+        results_info = analysis_response.get('results', {})
+        insights_info = analysis_response.get('insights', {})
+        visualizations = analysis_response.get('visualizations', [])
+        exploratory_steps = analysis_response.get('exploratory_steps', [])
         
-        # Convert insights to text format
-        insights_text = f"""### 📊 Direct Answer
-{analysis_response.insights.direct_answer}
+        # V3 doesn't need separate Python viz generation - it's included in visualizations
+        python_viz = {"success": False, "image": None}
+        
+        # Format insights as text for database storage
+        insights_text = f"""### 📊 Executive Summary
+{insights_info.get('summary', 'Analysis completed successfully.')}
 
-### 🔍 What the Data Shows
-{chr(10).join('- ' + fact for fact in analysis_response.insights.what_data_shows)}
+### 🔍 Key Findings
+{chr(10).join('- ' + finding for finding in insights_info.get('key_findings', []))}
 
-### 💡 Why This Happened
-{chr(10).join('- ' + reason for reason in analysis_response.insights.why_it_happened)}
-
-### 🎯 Business Implications
-{chr(10).join('- ' + impl for impl in analysis_response.insights.business_implications)}
+### 📈 Detailed Analysis
+{insights_info.get('detailed_analysis', 'See results above.')}
 """
         
-        # Prepare visualization config for frontend
-        viz_config = {
-            "type": analysis_response.visualization.chart_type.value,
-            "xAxis": analysis_response.visualization.x_axis,
-            "yAxis": analysis_response.visualization.y_axis,
-            "data": analysis_response.execution_result.data,
-            "columns": analysis_response.execution_result.columns
-        }
+        if insights_info.get('recommendations'):
+            insights_text += f"""
+### 💡 Recommendations
+{insights_info.get('recommendations', '')}
+"""
+        
+        # Prepare visualization config for frontend (use first visualization)
+        viz_config = {}
+        if visualizations:
+            first_viz = visualizations[0]
+            viz_config = {
+                "type": first_viz.get('type', 'table'),
+                "config": first_viz.get('config', {}),
+                "data": results_info.get('data', []),
+                "columns": results_info.get('columns', [])
+            }
+        else:
+            # Fallback to table view
+            viz_config = {
+                "type": "table",
+                "data": results_info.get('data', []),
+                "columns": results_info.get('columns', [])
+            }
         
         # Update query with all results
         execution_time = int((time.time() - start_time) * 1000)
-        query.generated_sql = analysis_response.analysis_plan.sql_query
+        query.generated_sql = sql_query_info.get('query', '')
         query.generated_code = analysis_response.analysis_plan.python_code
-        query.result_data = analysis_response.execution_result.data
+        query.result_data = results_info.get('data', [])
         query.visualization_config = viz_config
         query.python_chart = python_viz["image"] if python_viz["success"] else None
         query.insights = insights_text
         query.execution_time = execution_time
         query.status = "success"
         
-        # New multi-agent fields
-        query.intent = analysis_response.intent.intent.value
+        # Store enhanced V3 metadata
+        query.intent = analysis_response.get('intent', {}).get('primary_intent', 'analysis')
         query.analysis_plan = {
-            "steps": [
+            "understanding": analysis_response.get('understanding', ''),
+            "approach": analysis_response.get('approach', ''),
+            "exploratory_steps": [
                 {
-                    "step_number": step.step_number,
-                    "operation": step.operation,
-                    "description": step.description,
-                    "columns_involved": step.columns_involved
+                    "question": step.get('question', ''),
+                    "finding": step.get('finding', '')
                 }
-                for step in analysis_response.analysis_plan.steps
+                for step in exploratory_steps
             ],
-            "expected_columns": analysis_response.analysis_plan.expected_columns
+            "sql_explanation": sql_query_info.get('explanation', '')
         }
         query.schema_analysis = {
-            "total_rows": analysis_response.schema_analysis.total_rows if analysis_response.schema_analysis else 0,
-            "numeric_columns": analysis_response.schema_analysis.numeric_columns if analysis_response.schema_analysis else [],
-            "categorical_columns": analysis_response.schema_analysis.categorical_columns if analysis_response.schema_analysis else [],
-            "datetime_columns": analysis_response.schema_analysis.datetime_columns if analysis_response.schema_analysis else [],
-            "data_quality_score": analysis_response.schema_analysis.data_quality_score if analysis_response.schema_analysis else 0.0
+            "total_rows": analysis_response.get('metadata', {}).get('schema_columns', 0),
+            "exploratory_queries_count": len(exploratory_steps),
+            "visualizations_count": len(visualizations)
         }
-        query.reasoning_steps = analysis_response.reasoning_steps
-        query.metrics_used = analysis_response.execution_result.metrics
+        query.reasoning_steps = [
+            f"Understanding: {analysis_response.get('understanding', '')}",
+            f"Approach: {analysis_response.get('approach', '')}",
+            f"Exploratory queries: {len(exploratory_steps)}",
+            f"Main SQL generated with {sql_query_info.get('complexity', 'unknown')} complexity",
+            f"Visualizations: {len(visualizations)} charts selected",
+            f"Executive insights generated"
+        ]
         
         db.commit()
         db.refresh(query)
@@ -301,7 +318,7 @@ async def ask_question(
         # Save to knowledge base for RAG
         knowledge_service.add_expertise(
             query=query_request.query,
-            sql=analysis_response.analysis_plan.sql_query,
+            sql=sql_query_info.get('query', ''),
             schema=str(dataset.schema),
             dataset_id=dataset.id,
             user_id=current_user.id

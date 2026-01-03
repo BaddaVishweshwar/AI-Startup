@@ -132,100 +132,14 @@ class AnalyticsServiceV2:
                 reasoning_steps.append(f"Schema analyzed: {len(schema_analysis.numeric_columns)} numeric, "
                                      f"{len(schema_analysis.categorical_columns)} categorical columns")
 
-            # --- VIBE PIPELINE SWITCH ---
-            # Use the new Vibe Agent for streamlined execution
-            logger.info("🚀 Switching to Vibe Agent Pipeline...")
+            # --- DISABLED VIBE PIPELINE (CAUSING ERRORS) ---
+            # Use standard multi-agent pipeline instead
+            # logger.info("🚀 Switching to Vibe Agent Pipeline...")
+            # vibe_result = vibe_agent.analyze(query, df, str(dataset.id), vibe_history)
+            # if vibe_result.get("action") == "error":
+            #     raise Exception(vibe_result.get("error", "Unknown Vibe Error"))
             
-            # Prepare history (simple list of dicts)
-            vibe_history = []
-            if context and context.get('history'):
-                for h in context['history']:
-                    vibe_history.append({"role": h.get("role", "user"), "content": h.get("content", "")})
-            
-            vibe_result = vibe_agent.analyze(query, df, str(dataset.id), vibe_history)
-            
-            if vibe_result.get("action") == "error":
-                raise Exception(vibe_result.get("error", "Unknown Vibe Error"))
-            
-            # Map Vibe result to AnalysisResponse structure
-            
-            # 1. Execution Result
-            exec_res = vibe_result.get("execution_result", {})
-            execution_result = ExecutionResult(
-                success=exec_res.get("success", False),
-                data=exec_res.get("data", []),
-                columns=exec_res.get("columns", []),
-                row_count=exec_res.get("row_count", 0),
-                execution_time_ms=0, # could measure
-                error=exec_res.get("error")
-            )
-            
-            # 2. Visualization
-            viz_configs = []
-            viz_spec = vibe_result.get("viz_spec")
-            if viz_spec:
-                # Infer ChartType from spec
-                c_type_str = viz_spec.get("mark", "line") # simple inference
-                c_type = ChartType.LINE
-                if c_type_str == "bar": c_type = ChartType.BAR
-                elif c_type_str == "arc": c_type = ChartType.PIE
-                elif c_type_str == "point" or c_type_str == "circle": c_type = ChartType.SCATTER
-                
-                viz_configs.append(VizConfig(
-                    chart_type=c_type,
-                    title=vibe_result.get("explanation", "Visualization"),
-                    vega_lite_spec=viz_spec,
-                    validation_passed=True
-                ))
-            
-            # 3. Insights / Interpretation
-            explanation = vibe_result.get("explanation", "Analysis complete.")
-            insights = Insights(
-                direct_answer=explanation,
-                what_data_shows=[explanation],
-                why_it_happened=["Derived from SQL analysis."],
-                business_implications=["No specific implications detected."],
-                confidence=vibe_result.get("confidence", 1.0)
-            )
-            
-            interpretation = InterpretationResult(
-                title="Analysis Result",
-                main_finding=explanation
-            )
-            
-            # 4. Mock Plan & Requirements (for compatibility)
-            plan = AnalysisPlan(
-                steps=[AnalysisPlanStep(step_number=1, operation="SQL", description="Execute Vibe SQL", columns_involved=vibe_result.get("used_columns") or [], expected_output="Result set")],
-                sql_query=vibe_result.get("sql") or "",
-                expected_columns=vibe_result.get("used_columns") or []
-            )
-            
-            requirements = QueryRequirements(
-                required_columns=vibe_result.get("used_columns", []),
-                aggregations=[]
-            )
-            
-            reasoning_steps.append("Vibe Agent: Retrieved context, generated SQL, verified with SQLGlot, executed in DuckDB.")
-            
-            total_time = int((time.time() - start_time) * 1000)
-            
-            return AnalysisResponse(
-                understanding=query,
-                approach="Vibe Storage & Retrieval",
-                exploratory_steps=[],
-                intent=intent,
-                schema_analysis=schema_analysis,
-                query_requirements=requirements,
-                analysis_plan=plan,
-                execution_result=execution_result,
-                interpretation=interpretation,
-                visualization=viz_configs,
-                insights=insights,
-                reasoning_steps=reasoning_steps,
-                total_time_ms=total_time
-            )
-
-            # --- END VIBE PIPELINE ---
+            # --- STANDARD V2 PIPELINE (RELIABLE) ---
             
             # (Legacy Steps 3-9 are now unreachable due to the return above)
             
