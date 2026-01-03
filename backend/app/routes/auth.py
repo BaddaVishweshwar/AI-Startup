@@ -319,6 +319,13 @@ async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             "refresh_token": refresh_token,
             "token_type": "bearer"
         }
+    except ValueError as ve:
+        # Invalid token
+        print(f"❌ Google Auth Value Error: {ve}")
+        raise HTTPException(status_code=401, detail=f"Invalid Google Token: {str(ve)}")
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid Google Token: {str(e)}")
+        import traceback
+        print(f"❌ Google Auth Internal Error: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Auth Error: {str(e)}")
 

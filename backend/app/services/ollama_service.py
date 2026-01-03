@@ -53,6 +53,7 @@ class OllamaService:
         """Unified generation method"""
         
         if self.provider == "openai":
+            import openai
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
@@ -68,26 +69,32 @@ class OllamaService:
                     response_format=response_format
                 )
                 return completion.choices[0].message.content
+            except (openai.AuthenticationError, openai.APIConnectionError, openai.APIError) as e:
+                logger.warning(f"⚠️ OpenAI Error: {e}. Falling back to Ollama.")
+                self.provider = "ollama"
+                self.model_name = settings.OLLAMA_MODEL
+                self.client = ollama.Client(host=settings.OLLAMA_HOST)
+                # Retry with Ollama
+                return self.generate_response(prompt, system_prompt, json_mode, temperature)
             except Exception as e:
                 logger.error(f"OpenAI Generation Error: {e}")
                 raise e
 
-        else:
-            # Ollama Implementation
-            options = {"temperature": temperature}
-            if json_mode:
-                options["format"] = "json"
-                
-            full_prompt = prompt
-            if system_prompt:
-                full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
+        # Ollama Implementation
+        options = {"temperature": temperature}
+        if json_mode:
+            options["format"] = "json"
             
-            response = self.client.generate(
-                model=self.model_name,
-                prompt=full_prompt,
-                options=options
-            )
-            return response['response']
+        full_prompt = prompt
+        if system_prompt:
+            full_prompt = f"System: {system_prompt}\n\nUser: {prompt}"
+        
+        response = self.client.generate(
+            model=self.model_name,
+            prompt=full_prompt,
+            options=options
+        )
+        return response['response']
 
     # ------------------------------------------------------------------
     # Legacy Methods (Refactored to use generic generate_response)

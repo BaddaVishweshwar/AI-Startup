@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Gemini
     GOOGLE_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-1.5-flash-001"
-    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_ID: Optional[str] = "951242114092-v8s1mbdf81sjr9oian032ag0jckmfsgk.apps.googleusercontent.com"
     
     # OpenAI
     OPENAI_API_KEY: Optional[str] = None
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: set = {".csv", ".xlsx", ".xls", ".sas7bdat", ".parquet"}
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
     
     class Config:
         env_file = ".env"

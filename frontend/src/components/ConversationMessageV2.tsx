@@ -30,6 +30,7 @@ interface ConversationMessageV2Props {
             y_axis?: string[];
             title?: string;
             description?: string;
+            image_base64?: string; // NEW: Rendered from Backend
         };
         visualizations?: {
             chart_type: string;
@@ -37,6 +38,7 @@ interface ConversationMessageV2Props {
             y_axis?: string[];
             title?: string;
             description?: string;
+            image_base64?: string; // NEW
         }[];
         intent?: {
             intent: string;
@@ -83,6 +85,19 @@ export default function ConversationMessageV2({
 
     // Helper to render specific charts
     const renderChart = (vizConfig: any) => {
+        // PRIORITY: Server-Side Image
+        if (vizConfig.image_base64) {
+            return (
+                <div className="w-full flex justify-center">
+                    <img
+                        src={`data:image/png;base64,${vizConfig.image_base64}`}
+                        alt={vizConfig.title || "Visualization"}
+                        className="max-h-[400px] w-auto rounded-lg shadow-sm"
+                    />
+                </div>
+            );
+        }
+
         if (!vizConfig || !queryData?.result_data) return null;
 
         const { chart_type, x_axis, y_axis } = vizConfig;

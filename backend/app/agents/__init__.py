@@ -135,6 +135,8 @@ class VizConfig(BaseModel):
     description: Optional[str] = None # Added description for the chart
     validation_passed: bool = True
     rejection_reason: Optional[str] = None
+    vega_lite_spec: Optional[Dict[str, Any]] = None # Logic: Vega-Lite JSON spec
+    image_base64: Optional[str] = None # Rendered image
 
 
 class Insights(BaseModel):
