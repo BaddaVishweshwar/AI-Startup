@@ -161,6 +161,25 @@ class ClaudeService:
                     raise
         
         raise Exception("Max retries exceeded")
+    
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        json_mode: bool = False,
+        temperature: float = 0.7,
+        task_type: Optional[str] = None
+    ) -> str:
+        """
+        Alias for generate_response() for backward compatibility.
+        Many agents call .generate() instead of .generate_response().
+        """
+        return self.generate_response(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            json_mode=json_mode,
+            temperature=temperature
+        )
 
 
 # Singleton instance
