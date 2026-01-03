@@ -164,6 +164,26 @@ class OllamaService:
             options=options
         )
         return response['response']
+    
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        json_mode: bool = False,
+        temperature: float = 0.7,
+        task_type: Optional[str] = None
+    ) -> str:
+        """
+        Alias for generate_response() for backward compatibility.
+        Many agents call .generate() instead of .generate_response().
+        """
+        return self.generate_response(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            json_mode=json_mode,
+            temperature=temperature,
+            task_type=task_type
+        )
 
     # ------------------------------------------------------------------
     # Legacy Methods (Refactored to use generic generate_response)
