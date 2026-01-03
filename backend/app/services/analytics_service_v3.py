@@ -21,6 +21,8 @@ from ..services.ollama_service import ollama_service
 from ..services.context_enrichment_service import context_enrichment_service
 from ..services.response_formatter_service import response_formatter_service
 from ..agents.enhanced_exploration_agent import enhanced_exploration_agent
+from ..services.sql_validator_service import sql_validator
+from ..services.data_quality_service import data_quality_service
 from ..prompts.camelai_prompts import (
     MASTER_SYSTEM_PROMPT,
     SQL_GENERATION_PROMPT,
