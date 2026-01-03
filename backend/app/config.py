@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = "gpt-4o-mini"
     OPENAI_API_BASE: Optional[str] = "https://models.inference.ai.azure.com" # Default to GitHub Models for hex keys, or can be overridden
     
+    # Anthropic/Claude
+    ANTHROPIC_API_KEY: Optional[str] = None
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_MAX_TOKENS: int = 4096
+    
     
     # Email Configuration
     GMAIL_USER: Optional[str] = None

@@ -26,7 +26,8 @@ CONTEXT_CONFIG = {
 class OllamaService:
     """
     Hybrid LLM Service.
-    Supports local Ollama models AND external OpenAI-compatible providers (GPT-4o, GitHub Models).
+    Supports Claude (Anthropic), OpenAI, and local Ollama models.
+    Priority: Claude → OpenAI → Ollama
     """
     
     def __init__(self):
@@ -34,7 +35,20 @@ class OllamaService:
         self.client = None
         self.model_name = settings.OLLAMA_MODEL
         
-        # Check for OpenAI/GitHub Models configuration
+        # Priority 1: Check for Claude/Anthropic (best quality)
+        if settings.ANTHROPIC_API_KEY:
+            try:
+                from .claude_service import claude_service
+                if claude_service.is_available():
+                    self.provider = "claude"
+                    self.client = claude_service
+                    self.model_name = settings.ANTHROPIC_MODEL
+                    logger.info(f"🎯 Using Claude Provider: {self.model_name}")
+                    return
+            except ImportError:
+                logger.warning("⚠️ anthropic package not installed. Skipping Claude.")
+        
+        # Priority 2: Check for OpenAI/GitHub Models
         if settings.OPENAI_API_KEY:
             try:
                 from openai import OpenAI
@@ -48,18 +62,19 @@ class OllamaService:
                     
                 self.client = OpenAI(**client_args)
                 logger.info(f"🚀 Using OpenAI Provider: {self.model_name}")
+                return
             except ImportError:
                 logger.error("❌ openai package not installed. Falling back to Ollama.")
-                self.provider = "ollama"
         
-        # Fallback to Ollama
-        if self.provider == "ollama":
-            self.client = ollama.Client(host=settings.OLLAMA_HOST)
-            logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
+        # Priority 3: Fallback to Ollama (local, slow but works offline)
+        self.client = ollama.Client(host=settings.OLLAMA_HOST)
+        logger.info(f"🦙 Using Ollama Provider: {self.model_name}")
 
     def check_availability(self) -> bool:
         """Check if LLM service is configured and available"""
-        if self.provider == "openai":
+        if self.provider == "claude":
+            return bool(settings.ANTHROPIC_API_KEY)
+        elif self.provider == "openai":
             return bool(settings.OPENAI_API_KEY)
         else:
             # For Ollama, we could check connectivity, but for now just config
@@ -68,13 +83,13 @@ class OllamaService:
     def generate_response(
         self, 
         prompt: str, 
-        system_prompt: str = None, 
-        json_mode: bool = False, 
+        system_prompt: Optional[str] = None,
+        json_mode: bool = False,
         temperature: float = 0.7,
         task_type: Optional[str] = None
     ) -> str:
         """
-        Unified generation method with task-specific configurations.
+        Generate LLM response using configured provider.
         
         Args:
             prompt: User prompt
@@ -88,6 +103,20 @@ class OllamaService:
             temperature = TEMPERATURE_CONFIG[task_type]
             logger.debug(f"Using task-specific temperature for {task_type}: {temperature}")
         
+        # Claude Provider
+        if self.provider == "claude":
+            try:
+                return self.client.generate_response(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    json_mode=json_mode,
+                    temperature=temperature
+                )
+            except Exception as e:
+                logger.error(f"Claude generation error: {e}")
+                raise e
+        
+        # OpenAI Provider
         if self.provider == "openai":
             import openai
             messages = []
