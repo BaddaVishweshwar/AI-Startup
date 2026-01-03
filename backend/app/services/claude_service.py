@@ -168,7 +168,9 @@ class ClaudeService:
         system_prompt: Optional[str] = None,
         json_mode: bool = False,
         temperature: float = 0.7,
-        task_type: Optional[str] = None
+        task_type: Optional[str] = None,
+        model: Optional[str] = None,  # Accept but ignore for compatibility
+        **kwargs  # Accept any other args
     ) -> str:
         """
         Alias for generate_response() for backward compatibility.
