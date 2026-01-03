@@ -318,10 +318,21 @@ async def ask_question(
         knowledge_service.add_expertise(
             query=query_request.query,
             sql=sql_query_info.get('query', ''),
-            schema=str(dataset.schema),
-            dataset_id=dataset.id,
-            user_id=current_user.id
+            result_summary=f"{results_info.get('row_count', 0)} rows returned",
+            dataset_id=dataset.id
         )
+        
+        # Add to conversation history for context-aware follow-ups
+        if query_request.session_id:
+            conversation_manager.add_exchange(
+                session_id=query_request.session_id,
+                user_query=query_request.query,
+                sql_query=sql_query_info.get('query'),
+                results=results_info.get('data', [])[:5],  # Store sample
+                insights=insights_text,
+                visualizations=visualizations
+            )
+            logger.info(f"Added exchange to conversation history")
         
         return query
         
